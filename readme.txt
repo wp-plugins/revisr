@@ -1,6 +1,6 @@
 === Revisr ===
 Contributors: ExpandedFronts
-Tags: git, revisr, revision, version control, commit, wordpress, git wordpress
+Tags: revisr, git, git management, revision tracking, revision, backup, deploy, commit, bitbucket, github
 Requires at least: 3.9.1
 Tested up to: 3.9.1
 Stable tag: trunk
