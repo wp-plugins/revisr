@@ -50,8 +50,8 @@ Absolutely. Care should be taken when dealing with upgrades that depend on the d
 == Changelog ==
 
 = 1.1 =
-*Bugfixes and improvements
-*Added ability to view changes in files from a previous commit
+* Bugfixes and improvements
+* Added ability to view changes in files from a previous commit
 
 = 1.0.2 =
 * Minor bugfixes
