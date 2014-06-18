@@ -1,7 +1,7 @@
 === Revisr ===
 Contributors: ExpandedFronts
 Tags: revisr, git, git management, revision tracking, revision, backup, deploy, commit, bitbucket, github
-Requires at least: 3.9.1
+Requires at least: 3.5.1
 Tested up to: 3.9.1
 Stable tag: trunk
 License: GPLv3
