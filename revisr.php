@@ -13,7 +13,7 @@
  * Plugin Name:       Revisr
  * Plugin URI:        http://revisr.io/
  * Description:       A plugin that allows developers to manage WordPress websites with Git repositories.
- * Version:           1.2
+ * Version:           1.2.1
  * Author:            Expanded Fronts
  * Author URI: http://revisr.io/
  */
@@ -294,6 +294,11 @@ class Revisr
 	*/
 	public static function committed_files()
 	{
+		
+		if (get_post_type($_POST['id']) != "revisr_commits") {
+			return;
+		}
+		
 		$commit = get_post_meta( $_POST['id'], 'commit_hash', true );
 		$files = get_post_custom_values( 'committed_files', $_POST['id'] );
 		foreach ( $files as $file ) {
