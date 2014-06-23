@@ -1,6 +1,6 @@
 === Revisr ===
 Contributors: ExpandedFronts
-Tags: revisr, git, git management, revision tracking, revision, backup, deploy, commit, bitbucket, github
+Tags: revisr, git, git management, revision tracking, revision, backup, database, database backup, database plugin, deploy, commit, bitbucket, github
 Requires at least: 3.5.1
 Tested up to: 3.9.1
 Stable tag: trunk
@@ -13,11 +13,12 @@ A simple plugin that integrates your git repository with WordPress.
 
 Revisr allows you to manage your WordPress website with a git repository. With Revisr, you can:
 
-* Track changes to the files of your WordPress installation
+* Track changes to the files and database of your WordPress installation
+* Optionally use different database versions for each branch
 * Commit and push changes to a remote repository (including Bitbucket and Github)
 * Pull changes down from a remote repository
 * Easily toggle between branches
-* Revert to an earlier commit
+* Revert your website files and/or database to an earlier commit
 * Discard any unwanted changes
 * Manage .gitignore to prevent unwanted files/directories from being tracked
 
@@ -37,6 +38,9 @@ A must have plugin for deploying WordPress using git repositories.
 * Configure any remote repositories on the plugin settings page. Supports git through SSH or HTTPS. 
 * If the repository was cloned from a remote, Revisr will attempt to use the settings stored in Git.
 
+= Notes =
+Please verify that database backups are working before attempting to revert the database.
+
 It is also adviseable to add Revisr to the gitignore file via the settings page to make sure that reverts don't rollback the plugins' functionality. 
 
 == Frequently Asked Questions ==
@@ -48,7 +52,7 @@ This is likely an authentication issue. You can fix this by configuring your SSH
 This is either an authentication issue or the remote branch is ahead of yours.
 
 = Can I damage my site with this plugin? =
-Yes, care should be taken when dealing with upgrades that depend on the database. For example, upgrading to the next major version of WordPress and later reverting could cause issues if there are significant changes to the database. 
+Care should be taken when dealing with upgrades that depend on the database. Backing up the database before and after major changes is always recommended.
 
 == Screenshots ==
 
@@ -59,6 +63,12 @@ Yes, care should be taken when dealing with upgrades that depend on the database
 
 
 == Changelog ==
+
+= 1.3 =
+* Added ability to track/revert changes to the database
+* The commits listing now shows commits on the current branch by default
+* Added basic compatibility check
+* Added settings link to the plugin page
 
 = 1.2.1 =
 * Minor bugfixes
