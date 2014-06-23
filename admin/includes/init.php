@@ -404,8 +404,10 @@ class revisr_init
 
 	public function default_views()
 	{
-		if(!isset($_GET['branch']) && isset($_GET['post_type']) && $_GET['post_type'] == "revisr_commits") {
-			$_GET['branch'] = current_branch();
+		if(!isset($_GET['branch']) && isset($_GET['post_type'])) {
+			if($_GET['post_type'] == "revisr_commits") {
+			   $_GET['branch'] = current_branch();
+			}
 		}
 	}
 

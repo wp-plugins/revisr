@@ -208,6 +208,10 @@ class Revisr
 
 		$branch = $_GET['branch'];
 
+		if (!function_exists('system')) {
+			die("It appears you don't have the PHP system() function enabled. Check with your hosting provider or enable this in your PHP configuration.");
+		}
+
 		if ($branch != $this->branch) {
 			$this->checkout($branch);
 		}
