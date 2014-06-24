@@ -38,14 +38,14 @@ A must have plugin for deploying WordPress using git repositories.
 * Configure any remote repositories on the plugin settings page. Supports git through SSH or HTTPS. 
 * If the repository was cloned from a remote, Revisr will attempt to use the settings stored in Git.
 
-= Repository Instructions (New Installations) =
-* Create the repository on Bitbucket or Github
-* Clone the repository to your local computer, add WordPress, and push it back up to the repo
-* Upload the entire repository to the server, install WordPress, and add Revisr
-
 = Repository Instructions (Existing Installations) =
 * Ensure that the ".git" directory is in the root directory of the WordPress installation
 * Revisr will attempt to use the settings stored in Git for pushing to/pulling from any remote repositories. If one hasn't been set, you can define one on the plugin settings page. Please note that if you're using SSH for authenticaiton, you will need to generate an SSH key and add it to Bitbucket/Github. 
+
+= Repository Instructions (New Installations) =
+* Create the repository on Bitbucket or Github
+* Clone the repository to your computer, add WordPress, and push it to the repository.
+* Upload the entire repository to the server, install WordPress, and add Revisr
 
 = Notes =
 Please verify that database backups are working before attempting to revert the database.
