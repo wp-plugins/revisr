@@ -220,18 +220,24 @@ class Revisr
 
 		$branch = $_GET['branch'];
 
-		if (!function_exists('system')) {
-			die("It appears you don't have the PHP system() function enabled. Check with your hosting provider or enable this in your PHP configuration.");
+		$file = $this->upload_dir['basedir'] . "/revisr_db_backup.sql";
+
+		if (!file_exists($file) || filesize($file) < 1000) {
+			wp_die("Failed to revert the database: The backup file does not exist or has been corrupted.");
+		}
+
+		if (!function_exists('exec')) {
+			wp_die("It appears you don't have the PHP exec() function enabled. This is required to revert the database. Check with your hosting provider or enable this in your PHP configuration.");
 		}
 
 		if ($branch != $this->branch) {
 			$this->checkout($branch);
 		}
-
+		
 		chdir($this->upload_dir['basedir']);
 		$db->backup();
 		git("add revisr_db_backup.sql");
-		git("commit -m 'Autobackup by Revisr.' " . $this->upload_dir['basedir'] . "/revisr_db_backup.sql");
+		git("commit -m 'Autobackup by Revisr.' {$file}");
 		
 		if (isset($this->options['auto_push'])) {
 			git("push origin {$this->branch}");
