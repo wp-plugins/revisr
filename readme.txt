@@ -31,31 +31,22 @@ A must have plugin for deploying WordPress using git repositories.
 = Requirements = 
 * A WordPress installation in the root folder of a Git repository
 * Git must be installed on the server (most updated versions of cPanel have it preinstalled)
-* PHP exec (safe mode off, can be configured in your php.ini)
+* The PHP functions exec() and passthru() enabled
 
-= Plugin Instructions =
+= Instructions =
 * Unzip the plugin folder and upload it to the plugins directory of your WordPress installation.
 * Configure any remote repositories on the plugin settings page. Supports git through SSH or HTTPS. 
 * If the repository was cloned from a remote, Revisr will attempt to use the settings stored in Git.
 
-= Repository Instructions (Existing Installations) =
-* Ensure that the ".git" directory is in the root directory of the WordPress installation
-* Revisr will attempt to use the settings stored in Git for pushing to/pulling from any remote repositories. If one hasn't been set, you can define one on the plugin settings page. Please note that if you're using SSH for authenticaiton, you will need to generate an SSH key and add it to Bitbucket/Github. 
-
-= Repository Instructions (New Installations) =
-* Create the repository on Bitbucket or Github
-* Clone the repository to your computer, add WordPress, and push it to the repository.
-* Upload the entire repository to the server, install WordPress, and add Revisr
-
 = Notes =
 Please verify that database backups are working before attempting to revert the database.
 
-It is also adviseable to add Revisr to the gitignore file via the plugins' settings page to make sure that reverts don't rollback the plugins' functionality. 
+It is also adviseable to add Revisr to the gitignore file via the settings page to make sure that reverts don't rollback the plugins' functionality. 
 
 == Frequently Asked Questions ==
 
 = Why are my commits timing out? =
-This is likely an authentication issue. You can fix this by configuring your SSH keys or using the HTTPS authentication option on the settings page. 
+This is likely an authentication issue. You can fix this by configuring your SSH keys or using the HTTPS authentication option on the settings page.
 
 = Why aren't my commits being pushed to the remote repository? =
 This is either an authentication issue or the remote branch is ahead of yours.
@@ -72,6 +63,11 @@ Care should be taken when dealing with upgrades that depend on the database. Bac
 
 
 == Changelog ==
+
+= 1.3.1 =
+* Added error handling
+* Commits are no longer automatically pushed by default. This can be changed in the plugin settings page.
+* Fixed issue with .gitignore showing as a pending file
 
 = 1.3 =
 * Added ability to track/revert changes to the database
