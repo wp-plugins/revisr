@@ -21,6 +21,7 @@ function git($args)
 	return $output;	
 }
 
+//Used for pushes and pulls.
 function git_passthru($args)
 {
 	$current_dir = getcwd();
@@ -35,7 +36,10 @@ function git_passthru($args)
 function current_branch()
 {
 	$output = git("rev-parse --abbrev-ref HEAD");
-	return $output[0];
+	
+	if (!empty($output)) {
+		return $output[0];		
+	}
 }
 
 //Returns the number of pending files.
@@ -76,6 +80,7 @@ function get_status($status)
 	return $status;
 }
 
+//Makes sure we have the necessary functions.
 function check_compatibility()
 {
 	$error = "";
