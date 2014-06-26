@@ -15,7 +15,7 @@ Revisr allows you to manage your WordPress website with a git repository. With R
 
 * Track changes to the files and database of your WordPress installation
 * Optionally use different database versions for each branch
-* Commit and push changes to a remote repository (including Bitbucket and Github)
+* Commit and push changes to a remote repository (such as Bitbucket and Github)
 * Pull changes down from a remote repository
 * Easily toggle between branches
 * Revert your website files and/or database to an earlier commit
@@ -39,11 +39,16 @@ A must have plugin for deploying WordPress using git repositories.
 * If the repository was cloned from a remote, Revisr will attempt to use the settings stored in Git.
 
 = Notes =
-Please verify that database backups are working before attempting to revert the database.
+Please verify that database backups are working before attempting to revert the database, especially if using Revisr on a production website. You can do this by checking the repository for "revisr_db_backup.sql" after taking a backup.
 
 It is also adviseable to add Revisr to the gitignore file via the settings page to make sure that reverts don't rollback the plugins' functionality. 
 
 == Frequently Asked Questions ==
+
+= How do the database backups/restores work? =
+Every time you make a commit and check the box for "Backup database?", Revisr will take a mysqldump of the current database and commit it to the repository. Each backup overwrites the previous, since with Git we can revert to any previous version.
+
+When you select "Restore Database" from the commits screen, Revisr will backup the current database, checkout the old database with the associated commit, and import the raw .SQL file. Note: if you attempt to revert the database for a branch other than the one you have checked out, the other branch will be checked out beforehand.
 
 = Why are my commits timing out? =
 This is likely an authentication issue. You can fix this by configuring your SSH keys or using the HTTPS authentication option on the settings page.

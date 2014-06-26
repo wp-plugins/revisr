@@ -218,7 +218,9 @@ class Revisr
 	{
 		$db = new RevisrDB();
 
-		$branch = $_GET['branch'];
+		if (isset($_GET['branch'])) {
+			$branch = $_GET['branch'];
+		}
 
 		$file = $this->upload_dir['basedir'] . "/revisr_db_backup.sql";
 
@@ -253,7 +255,7 @@ class Revisr
 		$db->restore();
 		git("checkout master " . $this->upload_dir['basedir'] . "/revisr_db_backup.sql");
 		chdir($this->current_dir);
-		$undo_url = get_admin_url() . "admin-post.php?action=revert_db&db_hash={$current_commit[0]}";
+		$undo_url = get_admin_url() . "admin-post.php?action=revert_db&db_hash={$current_commit[0]}&branch={$branch}";
 		$this->log("Reverted database to previous commit. <a href='{$undo_url}'>Undo</a>", "revert");
 		$redirect = get_admin_url() . "admin.php?page=revisr&revert_db=success&prev_commit={$current_commit[0]}";
 		wp_redirect($redirect);
