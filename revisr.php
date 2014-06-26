@@ -14,6 +14,7 @@
  * Plugin URI:        http://revisr.io/
  * Description:       A plugin that allows developers to manage WordPress websites with Git repositories.
  * Version:           1.3.1
+ * Text Domain:		  revisr-plugin
  * Author:            Expanded Fronts
  * Author URI: http://revisr.io/
  */
@@ -225,6 +226,8 @@ class Revisr
 		if (!file_exists($file) || filesize($file) < 1000) {
 			wp_die("Failed to revert the database: The backup file does not exist or has been corrupted.");
 		}
+		
+		clearstatcache();
 
 		if (!function_exists('exec')) {
 			wp_die("It appears you don't have the PHP exec() function enabled. This is required to revert the database. Check with your hosting provider or enable this in your PHP configuration.");
@@ -233,7 +236,7 @@ class Revisr
 		if ($branch != $this->branch) {
 			$this->checkout($branch);
 		}
-		
+
 		chdir($this->upload_dir['basedir']);
 		$db->backup();
 		git("add revisr_db_backup.sql");
@@ -419,7 +422,7 @@ class Revisr
 		git("reset --hard HEAD");
 		$errors = git("pull origin --quiet");
 
-		if ($errors != "" && $errors != "Already up-to-date.") {
+		if ($errors != "" && $errors[0] != "Already up-to-date.") {
 			$this->log("Error pulling changes from the remote repository.", "error");
 			echo "<p>There was an error while pulling from the remote repository. This repository could be ahead of the remote or you are not authenticated.</p>";
 		}
