@@ -440,7 +440,7 @@ class Revisr
 	* Shows the files that were added in the given commit.
 	* @access public
 	*/
-	public static function committed_files()
+	public function committed_files()
 	{
 		if (get_post_type($_POST['id']) != "revisr_commits") {
 			return;
