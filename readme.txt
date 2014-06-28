@@ -16,6 +16,7 @@ Revisr allows you to manage your WordPress website with a git repository. With R
 * Track changes to the files and database of your WordPress installation
 * Optionally use different database versions for each branch
 * Commit and push changes to a remote repository (including Bitbucket and Github)
+* Automatically pull new commits via POST hooks
 * Pull changes down from a remote repository
 * Easily toggle between branches
 * Revert your website files and/or database to an earlier commit
