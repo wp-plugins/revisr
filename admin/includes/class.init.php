@@ -112,7 +112,7 @@ class RevisrInit
 		}
 		
 		else {
-			add_meta_box( 'revisr_pending_files', 'Pending Files', array($this, 'pending_files_meta'), 'revisr_commits', 'normal', 'high' );
+			add_meta_box( 'revisr_pending_files', 'Untracked Files', array($this, 'pending_files_meta'), 'revisr_commits', 'normal', 'high' );
 		}
 	}
 
@@ -164,14 +164,14 @@ class RevisrInit
 		        unset( $actions['trash'] );
 		        unset( $actions['inline hide-if-no-js'] );
 
+		        $id = get_the_ID();
 		        $url = get_admin_url() . "post.php?post=" . get_the_ID() . "&action=edit";
 
 		        $actions['view'] = "<a href='{$url}'>View</a>";
-		        $commit_meta = get_post_custom_values('commit_hash', get_the_ID());
 		        $branch_meta = get_post_custom_values('branch', get_the_ID());
 		        $db_hash = get_post_custom_values('db_hash', get_the_ID());
-		        $commit_hash = unserialize($commit_meta[0]);
-		        $actions['revert'] = "<a href='" . get_admin_url() . "admin-post.php?action=revert&commit_hash={$commit_hash[0]}&branch={$branch_meta[0]}&post_id=" . get_the_ID() ."'>Revert Files</a>";
+		        $commit_hash = get_hash($id);
+		        $actions['revert'] = "<a href='" . get_admin_url() . "admin-post.php?action=revert&commit_hash={$commit_hash}&branch={$branch_meta[0]}&post_id=" . get_the_ID() ."'>Revert Files</a>";
 	          	
 		        if ($db_hash[0] != '') {
 	          		$actions['revert_db'] = "<a href='" . get_admin_url() . "admin-post.php?action=revert_db&db_hash={$db_hash[0]}&branch={$branch_meta[0]}&post_id=" . get_the_ID() ."'>Revert Database</a>";
@@ -276,10 +276,10 @@ class RevisrInit
 		if (isset($options['revisr_admin_bar'])) {
 
 			if (count_pending() == "1") {
-				$text = "1 Pending File";
+				$text = "1 Untracked File";
 			}
 			else {
-				$text = count_pending() . " Pending Files";
+				$text = count_pending() . " Untracked Files";
 			}
 			$args = array(
 				'id'    => 'revisr',
@@ -332,18 +332,7 @@ class RevisrInit
 		$post_id = get_the_ID();
 		switch ($column) {
 			case "hash": 
-				$commit_meta = get_post_meta( $post_id, "commit_hash" );
-				
-				if (isset($commit_meta[0])) {
-					$commit_hash = $commit_meta[0];
-				}
-
-				if (empty($commit_hash)) {
-					echo __("Unknown");
-				}
-				else {
-					echo $commit_hash[0];
-				}
+				echo get_hash($post_id);
 			break;
 			case "branch":
 				$branch_meta = get_post_meta( $post_id, "branch" );
