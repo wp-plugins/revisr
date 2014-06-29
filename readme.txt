@@ -25,7 +25,6 @@ Revisr allows you to manage your WordPress website with a git repository. With R
 
 A must have plugin for deploying WordPress using git repositories.
 
-*Git Logo by Jason Long is licensed under the Creative Commons Attribution 3.0 Unported License.*
 
 == Installation ==
 
