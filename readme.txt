@@ -42,16 +42,16 @@ Please verify that database backups are working before attempting to revert the 
 
 If you're using the HTTPS method to connect to the remote repository, the password for the remote repository will be stored in the '.git/config' file. You should take steps to prevent this from being publicly accessible. The following code added to a '.htaccess' file in the '.git/' directory will prevent public access:
 
-```
+`
 content: Deny from all
-```
+`
 
 If you're using NGINX, you'll have to update your configuration file with something similar to the following:
-```
+`
 location ~ path/to/your-repo/.git {
         deny  all;
 }
-```
+`
 
 This issue can be avoided entirely by using SSH to authenticate, which is recommended in most cases. If using SSH, you will need to generate a SSH key on the server and add it to the remote repository (Bitbucket and Github both support SSH).
 
