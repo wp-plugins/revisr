@@ -1,0 +1,109 @@
+/* === QUICK ACTIONS === */
+
+.quick-action-btn {
+	width: 100%;
+	text-align: left !important;
+	margin-bottom: 4px !important;
+}
+#commit-btn {
+	background-color: #5cb85c;
+	border-color: #4cae4c;
+	color: #fff;
+}
+#commit-btn:before {
+	content: "\f132";
+	margin-top:5px;
+	display: inline-block;
+	color: #fff;
+	-webkit-font-smoothing: antialiased;
+	font: normal 20px/1 'dashicons';
+	float: left;
+}
+#commit-btn:hover {
+	background-color: #4cae4c;
+	border-color: #4cae4c;
+	color: #fff;
+}
+#discard-btn {
+	background-color: #d9534f;
+	border-color: #d43f3a;
+	color: #fff;
+}
+#discard-btn:before {
+	content: "\f158";
+	margin-top: 5px;
+	display: inline-block;
+	color: #fff;
+	-webkit-font-smoothing: antialiased;
+	font: normal 20px/1 'dashicons';
+	float: left;
+}
+#discard-btn:hover {
+	background-color: #d43f3a;
+	border-color: #d43f3a;
+	color: #fff;
+}
+#backup-btn:before {
+	content: "\f321";
+	margin-top: 5px;
+	display: inline-block;
+	color: #fff;
+	-webkit-font-smoothing: antialiased;
+	font: normal 20px/1 'dashicons';
+	float: left;
+}
+#push-btn:before {
+	content: "\f142";
+	margin-top: 5px;
+	display: inline-block;
+	color: #fff;
+	-webkit-font-smoothing: antialiased;
+	font: normal 20px/1 'dashicons';
+	float: left;
+}
+#pull-btn:before {
+	content: "\f140";
+	margin-top: 5px;
+	display: inline-block;
+	color: #fff;
+	-webkit-font-smoothing: antialiased;
+	font: normal 20px/1 'dashicons';
+	float: left;
+}
+.qb-text {
+	float: left;
+}
+#loader {
+	float: right;
+}
+#new_branch {
+	font-size: 12px;
+}
+
+/* === Site5 === */
+#site5_wrapper {
+	width: 80px;
+	text-align: center;
+	font-size: 11px;
+	float: right;
+	margin: 0px 20px 10px 10px;
+	padding-left: 5px;
+	padding-right: 5px;
+	background-color: #fff;
+	border: 1px solid #ddd;
+}
+#site5_logo {
+	width: 80px;
+	margin-top: -5px;
+}
+#revisr_alert {
+	margin-top: 20px;
+}
+#poststuff {
+	padding-top: 0px !important;
+}
+
+/* === MISC === */
+#gitignore {
+	width: 350px;
+}
