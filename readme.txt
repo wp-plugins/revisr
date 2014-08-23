@@ -65,7 +65,7 @@ You should also make sure that the .sql backup files aren't publicly accessible.
     Satisfy All
 </FilesMatch>
 `
-If you're using NGINX, something like the below should work in your nginx.conf:
+If you're using NGINX, something similar to the below should work:
 `
 location ~ \.sql { deny all; }
 `
@@ -99,6 +99,12 @@ Care should be taken when dealing with upgrades that depend on the database. Tak
 
 
 == Changelog ==
+
+= 1.6.1 =
+* Small UI improvements
+* Changed Recent Activity to show 15 items
+* Fixed bug with multi-site installations
+* Fixed bug with reverting files
 
 = 1.6 =
 * Added internationalization support
