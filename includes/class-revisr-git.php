@@ -40,7 +40,7 @@ class Revisr_Git
 		
 		$this->branch 	= Revisr_Git::current_branch();
 		$this->dir 		= getcwd();
-		$this->options  = get_option( 'revisr_settings' );
+		$this->options  = Revisr_Admin::options();
 
 		if ( isset( $this->options['remote_name']) && $this->options['remote_name'] != '' ) {
 			$this->remote = $this->options['remote_name'];
@@ -57,8 +57,8 @@ class Revisr_Git
 	 * @return Returns an array of output if successful, or false on failure.
 	 */
 	public static function run( $args, $return_error = false ) {
-		$dir = getcwd();
 		$cmd = "git $args";
+		$dir = getcwd();
 		chdir( ABSPATH );
 		exec( $cmd, $output, $return );
 		chdir( $dir );
@@ -165,10 +165,12 @@ class Revisr_Git
 	}
 
 	/**
-	* Checks out a new or existing branch.
+	* Checks out an existing branch.
 	* @access public
+	* @param string  $args 			The branch to checkout.
+	* @param boolean $new_branch 	Whether the branch being checked out is a new branch.
 	*/
-	public function checkout( $args ) {
+	public function checkout( $args, $new_branch = false ) {
 		if ( isset( $this->options['reset_db'] ) ) {
 			$db = new Revisr_DB();
 			$db->backup();
@@ -181,27 +183,60 @@ class Revisr_Git
 			$branch = $args;
 		}
 		
-		//Checkout the new or existing branch.
 		Revisr_Git::run( 'reset --hard HEAD' );
-		if ( isset( $_REQUEST['new_branch'] ) && $_REQUEST['new_branch'] == 'true' ) {
-			Revisr_Git::run("checkout -b {$_REQUEST['branch']}");
-			Revisr_Admin::log("Checked out new branch: {$_REQUEST['branch']}.", "branch");
-			Revisr_Admin::notify(get_bloginfo() . " - Branch Changed", get_bloginfo() . " was switched to the new branch {$branch}.");
-			echo "<script>
-					window.top.location.href = '" . get_admin_url() . "admin.php?page=revisr&checkout=success&branch={$_REQUEST['branch']}'
-				</script>";
-			exit();
-		} else {
-			Revisr_Git::run("checkout {$branch}");
-			if ( isset( $this->options['reset_db'] ) ) {
-				$db->restore( true );
-			}
-			Revisr_Admin::log( "Checked out branch: {$_REQUEST['branch']}.", "branch" );
-			Revisr_Admin::notify(get_bloginfo() . " - Branch Changed", get_bloginfo() . " was switched to branch {$branch}.");
-			$url = get_admin_url() . "admin.php?page=revisr&branch={$branch}&checkout=success";
-			wp_redirect( $url );
+		Revisr_Git::run("checkout {$branch}");
+		
+		if ( isset( $this->options['reset_db'] ) && $new_branch === false ) {
+			$db->restore( true );
 		}
-	}	
+		$msg = sprintf( __( 'Checked out branch: %s.', 'revisr' ), $branch );
+		$email_msg = sprintf( __( '%s was switched to branch %s.', 'revisr' ), get_bloginfo(), $branch );
+		Revisr_Admin::log( $msg, "branch" );
+		Revisr_Admin::notify(get_bloginfo() . __( ' - Branch Changed', 'revisr'), $email_msg );
+		$url = get_admin_url() . "admin.php?page=revisr&branch={$branch}&checkout=success";
+		wp_redirect( $url );
+	}
+
+	/**
+	 * Creates a new branch.
+	 * @access public
+	 */
+	public function create_branch() {
+		if ( isset( $_REQUEST['branch_name'] ) && $_REQUEST['branch_name'] != '' ) {
+			$branch = $_REQUEST['branch_name'];
+			Revisr_Git::run( "branch {$branch}" );
+			$msg = sprintf( __( 'Created new branch: %s.', 'revisr' ), $branch );
+			Revisr_Admin::log( $msg, 'branch' );
+
+			if ( isset( $_REQUEST['checkout_new_branch'] ) ) {
+				$this->checkout( $branch, true );
+			}
+			wp_redirect( get_admin_url() . "admin.php?page=revisr_branches&status=create_success&branch={$branch}" );
+		}
+	}
+
+	/**
+	 * Deletes an existing branch.
+	 * @access public
+	 */
+	public function delete_branch() {
+		if ( isset( $_POST['branch'] ) && $_POST['branch'] != $this->branch ) {
+			$branch = $_POST['branch'];
+			Revisr_Git::run( "branch -D {$branch}" );
+			$msg = sprintf( __( 'Deleted branch %s.', 'revisr'), $branch );
+
+			if ( isset( $_POST['delete_remote_branch'] ) ) {
+				Revisr_Git::run( "push {$this->remote} --delete {$branch}" );
+			}
+			
+			Revisr_Admin::log( $msg, 'branch' );
+			Revisr_Admin::notify( get_bloginfo() . __( 'Branch Deleted', 'revisr' ), $msg );
+			echo "<script>
+					window.top.location.href = '" . get_admin_url() . "admin.php?page=revisr_branches&status=delete_success&branch={$branch}'
+			</script>";
+		}
+		exit();
+	}
 
 	/**
 	 * Discards the changes to the current working directory.
@@ -426,73 +461,77 @@ class Revisr_Git
 			foreach ( $files as $file ) {
 			    $output = unserialize( $file );
 			}
-		} else {
-			$output = 0;
 		}
 
-		printf( __('<br><strong>%s</strong> files were included in this commit.<br><br>', 'revisr' ), count( $output ) );
-		
-
-		if (isset($_POST['pagenum'])) {
-			$current_page = $_POST['pagenum'];
-		}
-		else {
-			$current_page = 1;
-		}
-		
-		$num_rows = count( $output );
-		$rows_per_page = 20;
-		$last_page = ceil( $num_rows/$rows_per_page );
-
-		if ( $current_page < 1){
-		    $current_page = 1;
-		}
-		if ( $current_page > $last_page){
-		    $current_page = $last_page;
-		}
-		
-		$offset = $rows_per_page * ($current_page - 1);
-
-		if ( ! is_array( $output ) ) {
-			_e( 'There was an error processing your request. Please try again.', 'revisr' );
-			exit();
-		}
-
-		$results = array_slice($output, $offset, $rows_per_page);
-		?>
-		<table class="widefat">
-			<thead>
-			    <tr>
-			        <th><?php _e( 'File', 'revisr'); ?></th>
-			        <th><?php _e( 'Status', 'revisr'); ?></th>
-			    </tr>
-			</thead>
-			<tbody>
-			<?php
-				//Clean up output from git status and echo the results.
-				foreach ($results as $result) {
-					$short_status = substr($result, 0, 3);
-					$file = substr($result, 2);
-					$status = Revisr_Git::get_status($short_status);
-					if ($status != "Untracked" && $status != "Deleted") {
-						echo "<tr><td><a href='" . get_admin_url() . "admin-post.php?action=view_diff&file={$file}&commit={$commit}&TB_iframe=true&width=600&height=550' title='View Diff' class='thickbox'>{$file}</a></td><td>{$status}</td></td>";
+		if ( isset( $output ) ) {
+			printf( __('<br><strong>%s</strong> files were included in this commit.<br><br>', 'revisr' ), count( $output ) );
+			
+			if (isset($_POST['pagenum'])) {
+						$current_page = $_POST['pagenum'];
 					}
 					else {
-						echo "<tr><td>$file</td><td>$status</td></td>";
-					}					
-				}
-			?>
-			</tbody>
-		</table>
-		<?php
-			if ( $current_page != "1" ){
-				echo '<a href="#" onclick="prev();return false;">' . __( '<- Previous', 'revisr' ) .  '</a>';
-			}
-			printf( __( 'Page %s of %s', 'revisr' ), $current_page, $last_page ); 
-			if ( $current_page != $last_page ){
-				echo '<a href="#" onclick="next();return false;">' . __( 'Next ->', 'revisr' ) . '</a>';
-			}
-			exit();
+						$current_page = 1;
+					}
+					
+					$num_rows = count( $output );
+					$rows_per_page = 20;
+					$last_page = ceil( $num_rows/$rows_per_page );
+
+					if ( $current_page < 1){
+					    $current_page = 1;
+					}
+					if ( $current_page > $last_page){
+					    $current_page = $last_page;
+					}
+					
+					$offset = $rows_per_page * ($current_page - 1);
+
+					if ( ! is_array( $output ) ) {
+						_e( 'There was an error processing your request. Please try again.', 'revisr' );
+						exit();
+					}
+
+					$results = array_slice($output, $offset, $rows_per_page);
+					?>
+					<table class="widefat">
+						<thead>
+						    <tr>
+						        <th><?php _e( 'File', 'revisr'); ?></th>
+						        <th><?php _e( 'Status', 'revisr'); ?></th>
+						    </tr>
+						</thead>
+						<tbody>
+						<?php
+							//Clean up output from git status and echo the results.
+							foreach ($results as $result) {
+								$short_status = substr($result, 0, 3);
+								$file = substr($result, 2);
+								$status = Revisr_Git::get_status($short_status);
+								if ($status != "Untracked" && $status != "Deleted") {
+									echo "<tr><td><a href='" . get_admin_url() . "admin-post.php?action=view_diff&file={$file}&commit={$commit}&TB_iframe=true&width=600&height=550' title='View Diff' class='thickbox'>{$file}</a></td><td>{$status}</td></td>";
+								}
+								else {
+									echo "<tr><td>$file</td><td>$status</td></td>";
+								}					
+							}
+						?>
+						</tbody>
+					</table>
+					
+					<?php
+						echo '<p id="revisr-pagination">';
+						if ( $current_page != "1" ){
+							echo '<a href="#" onclick="prev();return false;">' . __( '<- Previous', 'revisr' ) .  '</a>';
+						}
+						printf( __( 'Page %s of %s', 'revisr' ), $current_page, $last_page ); 
+						if ( $current_page != $last_page ){
+							echo '<a href="#" onclick="next();return false;">' . __( 'Next ->', 'revisr' ) . '</a>';
+						}
+						echo '</p>';
+						exit();		
+		} else {
+			_e( '<br>No files were included in this commit.', 'revisr' );
+		}
 	}
 
 	/**
@@ -627,6 +666,21 @@ class Revisr_Git
 		}
 	}
 
+	/**
+	 * Checks to see if the provided URL for a remote repository is valid.
+	 * @access public
+	 */
+	public function verify_remote() {
+		//"Ping" the remote repository to verify that it exists.
+		$ping = Revisr_Git::run( "ls-remote " . $_REQUEST['remote'] . " HEAD" );
+		if ( $ping === false ) {
+			_e( 'Remote not found...', 'revisr' );
+		} else {
+			_e( 'Success!', 'revisr' );
+		}
+		exit();
+	}
+	
 	/**
 	 * Returns the commit hash for a specific commit.
 	 * @access public

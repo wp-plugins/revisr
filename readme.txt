@@ -100,6 +100,13 @@ Care should be taken when dealing with upgrades that depend on the database. Tak
 
 == Changelog ==
 
+= 1.6.2 =
+* Added dedicated page for managing branches
+* Database backups from the dashboard now automatically create new commits
+* Fixed timezone bug on the dashboard
+* Improvements to settings page
+* Small UI improvements
+
 = 1.6.1 =
 * Small UI improvements
 * Changed Recent Activity to show 15 items

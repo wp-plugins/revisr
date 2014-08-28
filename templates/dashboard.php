@@ -21,7 +21,7 @@ wp_localize_script( 'revisr_dashboard', 'dashboard_vars', array(
 <div class="wrap">
 	
 	<div id="icon-options-general" class="icon32"></div>
-	<h2><?php _e( 'Revisr Dashboard', 'revisr' ); ?></h2>
+	<h2><?php _e( 'Revisr - Dashboard', 'revisr' ); ?></h2>
 	
 	<?php
 		$error = Revisr::check_compatibility();
@@ -99,8 +99,7 @@ wp_localize_script( 'revisr_dashboard', 'dashboard_vars', array(
 					</div> <!-- .postbox -->
 
 					<div class="postbox">
-					
-						<h3><span><?php _e('Branches', 'revisr'); ?> <a id="new_branch" href="<?php echo get_admin_url(); ?>admin-post.php?action=create_branch&TB_iframe=true&width=250&height=150" title="Create Branch" class="thickbox"><?php _e('(Create Branch)', 'revisr'); ?></a> </span></h3>
+						<h3><?php _e('Branches', 'revisr'); ?><span id="manage_branches"> (<a href="<?php echo get_admin_url(); ?>admin.php?page=revisr_branches" title="Manage Branches"><?php _e( 'Manage', 'revisr' ); ?></a>)</span></h3>
 						<div id="branches_box" class="inside">
 							<table id="branches_table" class="widefat">
 								<?php

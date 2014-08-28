@@ -62,7 +62,7 @@ class Revisr_DB
 		$this->dir 			= getcwd();
 		$this->git 			= new Revisr_Git;
 		$this->sql_file 	= 'revisr_db_backup.sql';
-		$this->options 		= get_option( 'revisr_settings' );
+		$this->options 		= Revisr_Admin::options();
 		$this->upload_dir 	= wp_upload_dir();
 		$this->check_exec();
 
@@ -97,7 +97,12 @@ class Revisr_DB
 		exec( "{$this->path}mysqldump {$this->conn} > {$this->sql_file}" );
 
 		if ( $this->verify_backup() != false ) {
-			$this->commit_db();
+
+			if ( isset( $_REQUEST['source'] ) && $_REQUEST['source'] == 'ajax_button' ) {
+				$this->commit_db( true );
+			} else {
+				$this->commit_db();
+			}
 
 			$msg = __( 'Successfully backed up the database.', 'revisr' );
 			Revisr_Admin::log( $msg, 'backup' );
@@ -162,27 +167,48 @@ class Revisr_DB
 
 	/**
 	 * Commits the database to the repository and pushes if needed.
-	 * @access private
-	 * @param string $commit_msg The message to use for the commit.
+	 * @access public
+	 * @param boolean $insert_post Whether to insert a new commit custom_post_type.
 	 */
-	private function commit_db() {
-		$commit_msg = __( 'Backed up the database with Revisr.', 'revisr' );
+	public function commit_db( $insert_post = false ) {
+		$commit_msg = escapeshellarg( __( 'Backed up the database with Revisr.', 'revisr' ) );
 		$file 	= $this->upload_dir['basedir'] . '/' . $this->sql_file;
 		$add 	= Revisr_Git::run( "add {$file}" );
-		$commit = Revisr_Git::run( 'commit -m "' . $commit_msg . '"' );
+		$commit = Revisr_Git::run( "commit -m $commit_msg" );
 
 		if ( $add === false || $commit === false ) {
+			echo "Error !";
+			exit();
 			$error = __( 'There was an error committing the database.', 'revisr' );
 			$this->maybe_return( $error );
-			exit();
 		}
+
+		//Insert the corresponding post if necessary.
+		if ( $insert_post === true ) {
+			$post = array(
+				'post_title' 	=> $commit_msg,
+				'post_content' 	=> '',
+				'post_type' 	=> 'revisr_commits',
+				'post_status' 	=> 'publish',
+			);
+			$post_id = wp_insert_post( $post );
+			$commit_hash = Revisr_Git::run( 'rev-parse --short HEAD' );
+			add_post_meta( $post_id, 'commit_hash', $commit_hash[0] );
+			add_post_meta( $post_id, 'db_hash', $commit_hash[0] );
+			add_post_meta( $post_id, 'branch', $this->branch );
+			add_post_meta( $post_id, 'files_changed', '0' );
+			add_post_meta( $post_id, 'committed_files', array() );
+		}
+
+		//Push changes if necessary.
 		$this->git->auto_push();
 	}
 
 	/**
 	 * Echoes the result if necessary.
 	 * @access private
-	 * @param string $status The string to output.
+	 * @param string $status 		The string to output.
+	 * @param string $insert_post 	Whether to insert a post.
 	 */
 	private function maybe_return( $status ) {
 		if ( isset( $_REQUEST['source'] ) && $_REQUEST['source'] == 'ajax_button' ) {

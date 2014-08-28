@@ -39,7 +39,6 @@ class Revisr
 	public function __construct() {
 		global $wpdb;
 		$this->wpdb = $wpdb;
-		$this->options 		= get_option( 'revisr_settings' );
 		$this->plugin 		= plugin_basename( __FILE__ );
 		$this->table_name 	= $this->wpdb->prefix . 'revisr';
 
@@ -47,8 +46,9 @@ class Revisr
 		$this->load_dependancies();
 		$this->git_hooks();
 		$this->db_hooks();
+
 		if ( is_admin() ) {
-			add_action('plugins_loaded', array( $this, 'admin_hooks' ) );
+			add_action( 'plugins_loaded', array( $this, 'admin_hooks' ) );
 		}
 	}
 
@@ -70,7 +70,9 @@ class Revisr
 	public function admin_hooks() {
 		$admin = new Revisr_Admin();
 		if ( is_super_admin() ) {
-			$plugin = $this->plugin;
+			
+			$plugin 		= $this->plugin;
+			$this->options 	= Revisr_Admin::options();
 			add_action( 'init', array( $admin, 'revisr_post_types' ) );
 			add_action( 'admin_notices', array( $admin, 'site5_notice' ) );
 			add_action( 'load-edit.php', array( $admin, 'default_views' ) );
@@ -80,7 +82,7 @@ class Revisr
 			add_action( 'views_edit-revisr_commits', array( $admin, 'custom_views' ) );
 			add_action( 'post_row_actions', array( $admin, 'custom_actions' ) );
 			add_action( 'admin_menu', array( $admin, 'menus' ), 2 );
-			add_action( 'admin_post_create_branch', array( $admin, 'create_branch' ) );
+			add_action( 'admin_post_delete_branch_form', array( $admin, 'delete_branch_form' ) );
 			add_action( 'manage_edit-revisr_commits_columns', array( $admin, 'columns' ) );
 			add_action( 'manage_revisr_commits_posts_custom_column', array( $admin, 'custom_columns' ) );
 			add_action( 'admin_enqueue_scripts', array( $admin, 'revisr_scripts' ) );
@@ -103,6 +105,8 @@ class Revisr
 		$git = new Revisr_Git();
 		add_action( 'publish_revisr_commits', array( $git, 'commit' ) );
 		add_action( 'admin_post_checkout', array( $git, 'checkout' ) );
+		add_action( 'admin_post_create_branch', array( $git, 'create_branch' ) );
+		add_action( 'admin_post_delete_branch', array( $git, 'delete_branch' ) );
 		add_action( 'admin_post_revert', array( $git, 'revert' ) );
 		add_action( 'admin_post_view_diff', array( $git, 'view_diff' ) );
 
@@ -118,7 +122,8 @@ class Revisr
 		add_action( 'wp_ajax_pull', array( $git, 'pull' ) );
 		add_action( 'wp_ajax_view_diff', array( $git, 'view_diff' ) );
 		add_action( 'wp_ajax_pending_files', array( $git, 'pending_files' ) );
-		add_action( 'wp_ajax_committed_files', array( $git, 'committed_files' ) );	
+		add_action( 'wp_ajax_committed_files', array( $git, 'committed_files' ) );
+		add_action( 'wp_ajax_verify_remote', array( $git, 'verify_remote' ) );
 	}
 	
 	/**
@@ -169,10 +174,19 @@ class Revisr
 		if ( ! function_exists( 'exec' ) ) {
 			$error .= __( '<p><strong>WARNING:</strong> Your server does not appear to support php exec() and/or passthru(). <br> 
 			These functions are necessary for Revisr to work correctly. Contact your web host if you\'re not sure how to activate these functions.</p>', 'revisr' );
+			return $error;
 		}
+
 		if ( Revisr_Git::run( 'version' ) === false || Revisr_Git::run( 'status' ) === false ) {
 			$error .= __( '<p><strong>WARNING:</strong> No Git repository detected. Revisr requires that Git be installed on the server and the parent WordPress installation be in the root directory of a Git repository.</p>', 'revisr' );
+			return $error;
 		}
-		return $error;
+
+		$top_level = Revisr_Git::run( 'rev-parse --show-toplevel' );
+		$git_dir 	= $top_level[0] . '/.git/';
+		if ( ! is_writable( $git_dir ) ) {
+			$error .= __( '<p><strong>WARNING:</strong> Revisr cannot write to the ".git/" directory.<br>Please make sure that write permissions are set for this directory. The recommended settings are 755 for directories, and 644 for files.');
+			return $error;
+		}		
 	}
 }

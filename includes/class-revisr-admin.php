@@ -46,14 +46,16 @@ class Revisr_Admin
 		wp_register_script( 'revisr_dashboard', plugins_url() . '/revisr/assets/js/dashboard.js', 'jquery',  '07052014', true );
 		wp_register_script( 'revisr_staging', plugins_url() . '/revisr/assets/js/staging.js', 'jquery', '07052014', false );
 		wp_register_script( 'revisr_committed', plugins_url() . '/revisr/assets/js/committed.js', 'jquery', '07052014', false );
+		wp_register_script( 'revisr_settings', plugins_url() . '/revisr/assets/js/settings.js', 'jquery', '08272014', true );
 
-		$allowed_pages = array( 'revisr', 'revisr_settings' );
+		$allowed_pages = array( 'revisr', 'revisr_settings', 'revisr_branches' );
 		
-		//Enqueue styles and scripts on the Revisr dashboard.
+		//Enqueue common styles and scripts.
 		if ( isset( $_GET['page'] ) && in_array( $_GET['page'], $allowed_pages ) ) {
 			wp_enqueue_style( 'revisr_dashboard_css' );
 			wp_enqueue_style( 'thickbox' );
-			wp_enqueue_script( 'thickbox' );		
+			wp_enqueue_script( 'thickbox' );
+			wp_enqueue_script( 'revisr_settings' );
 		}
 
 		//Enqueue styles and scripts on the Revisr staging area.
@@ -155,7 +157,8 @@ class Revisr_Admin
 	public function menus() {
 		$menu = add_menu_page( 'Dashboard', 'Revisr', 'manage_options', 'revisr', array( $this, 'revisr_dashboard' ), plugins_url( 'revisr/assets/img/white_18x20.png' ) );
 		add_submenu_page( 'revisr', 'Revisr - Dashboard', 'Dashboard', 'manage_options', 'revisr', array( $this, 'revisr_dashboard' ) );
-		$settings_hook = add_submenu_page( 'revisr', 'Revisr - Settings', 'Settings', 'manage_options', 'revisr_settings', array( $this, 'revisr_settings' ) );
+		add_submenu_page( 'revisr', 'Revisr - Branches', 'Branches', 'manage_options', 'revisr_branches', array( $this, 'revisr_branches' ) );
+		add_submenu_page( 'revisr', 'Revisr - Settings', 'Settings', 'manage_options', 'revisr_settings', array( $this, 'revisr_settings' ) );
 		add_action( 'admin_print_scripts-' . $menu, array( $this, 'revisr_scripts' ) );
 		remove_meta_box( 'authordiv', 'revisr_commits', 'normal' );
 	}
@@ -167,11 +170,12 @@ class Revisr_Admin
 	public function revisr_commits_submenu_order( $menu_ord ) {
 		global $submenu;
 	    $arr = array();
-
+	    
 		if ( isset( $submenu['revisr'] ) ) {
 		    $arr[] = $submenu['revisr'][0];
-		    $arr[] = $submenu['revisr'][2];
+		    $arr[] = $submenu['revisr'][3];
 		    $arr[] = $submenu['revisr'][1];
+		    $arr[] = $submenu['revisr'][2];
 		    $submenu['revisr'] = $arr;
 		}
 	    return $menu_ord;
@@ -183,6 +187,14 @@ class Revisr_Admin
 	 */
 	public function revisr_dashboard() {
 		include_once $this->dir . "../templates/dashboard.php";
+	}
+
+	/**
+	 * Includes the template for the branches page.
+	 * @access public
+	 */
+	public function revisr_branches() {
+		include_once $this->dir . "../templates/branches.php";
 	}
 
 	/**
@@ -448,6 +460,7 @@ class Revisr_Admin
 	public function recent_activity() {
 		global $wpdb;
 		$revisr_events = $wpdb->get_results( "SELECT id, time, message FROM $this->table_name ORDER BY id DESC LIMIT 15", ARRAY_A );
+
 		if ( $revisr_events ) {
 			?>
 			<table class="widefat">
@@ -463,7 +476,7 @@ class Revisr_Admin
 			</table>
 			<?php		
 		} else {
-			_e( '<p>Your recent activity will show up here.</p>', 'revisr' );
+			_e( '<p id="revisr_activity_no_results">Your recent activity will show up here.</p>', 'revisr' );
 		}
 		exit();
 	}
@@ -472,28 +485,49 @@ class Revisr_Admin
 	 * Displays the form to create a new branch.
 	 * @access public
 	 */
-	public function create_branch() {
-		$styles_url = get_admin_url() . "load-styles.php?c=0&dir=ltr&load=dashicons,admin-bar,wp-admin,buttons,wp-auth-check&ver=3.9.1";
+	public function delete_branch_form() {
+		$styles_url = get_admin_url() . "load-styles.php?c=0&dir=ltr&load=dashicons,admin-bar,wp-admin,buttons,wp-auth-check";
 		?>
 		<link href="<?php echo $styles_url; ?>" rel="stylesheet" type="text/css">
 		<div class="container" style="padding:10px">
 			
-			<form action="<?php echo get_admin_url(); ?>admin-post.php?action=checkout" method="post">
-			<label for="branch_name"><strong><?php _e( 'Branch Name', 'revisr' ); ?>:</strong></label>
-			<input id="branch_name" type="text" name="branch" style="width:100%" autofocus />
-			<input type="hidden" name="new_branch" value="true" class="regular-text"/>
-			<button class="button button-primary" style="
-				background-color: #5cb85c;
-				height: 30px;
-				width: 100%;
-				margin-top:5px;
-				border-radius: 4px;
-				border: 1px #4cae4c solid;
-				color: #fff;"><?php _e( 'Create Branch', 'revisr' ); ?></button>
+			<form action="<?php echo get_admin_url(); ?>admin-post.php" method="post">
+				<p><?php _e( 'Are you sure you want to delete this branch? This will delete all local work on this branch.', 'revisr' ); ?></p>
+				<input type="checkbox" id="delete_remote_branch" name="delete_remote_branch">
+				<label for="delete_remote_branch"><?php _e( 'Also delete this branch from the remote repository.', 'revisr' ); ?></label>
+				<input type="hidden" name="action" value="delete_branch">
+				<input type="hidden" name="branch" value="<?php echo $_GET['branch']; ?>">
+				<p id="delete-branch-submit" style="margin:0;padding:0;text-align:center;">
+					<button id="confirm-delete-branch-btn" class="button button-primary" style="background-color:#EB5A35;height:30px;width:45%;margin-top:15px;border-radius:4px;border:1px #972121 solid;color:#fff;"><?php _e( 'Delete Branch', 'revisr' ); ?></button>
+				</p>
 			</form>
-			<p style="font-style:italic;color:#BBB;text-align:center;"><?php _e( 'New branch will be checked out.', 'revisr' ); ?></p>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Gets user options and preferences in a single array.
+	 * @access public
+	 */
+	public static function options() {
+		$old	 	= get_option( 'revisr_settings' );
+		if ( ! $old ) {
+			$old = array();
+		}
+		$general 	= get_option( 'revisr_general_settings' );
+		if ( ! $general ) {
+			$general = array();
+		}
+		$remote 	= get_option( 'revisr_remote_settings' );
+		if ( ! $remote ) {
+			$remote = array();
+		}
+		$database 	= get_option( 'revisr_database_settings' );
+		if ( ! $database ) {
+			$database = array();
+		}
+		$final = array_merge( $old, $general, $remote, $database );
+		return $final;
 	}
 
 	/**
@@ -504,7 +538,7 @@ class Revisr_Admin
 	 */
 	public static function log( $message, $event ) {
 		global $wpdb;
-		$time = current_time( 'mysql' );
+		$time = current_time( 'mysql', 1 );
 		$table = $wpdb->prefix . 'revisr';
 		$wpdb->insert(
 			"$table",
@@ -545,7 +579,7 @@ class Revisr_Admin
 	 * @access public
 	 */
 	public function site5_notice() {
-		$allowed_on = array( 'revisr', 'revisr_settings', 'revisr_commits', 'revisr_settings' );
+		$allowed_on = array( 'revisr', 'revisr_settings', 'revisr_commits', 'revisr_settings', 'revisr_branches' );
 		if ( isset( $_GET['page'] ) && in_array( $_GET['page'], $allowed_on ) ) {
 			$output = true;
 		} else if ( isset( $_GET['post_type'] ) && in_array( $_GET['post_type'], $allowed_on ) || get_post_type() == 'revisr_commits' ) {
