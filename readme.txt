@@ -2,7 +2,7 @@
 Contributors: ExpandedFronts
 Tags: revisr, git, git management, revision tracking, revision, backup, database, database backup, database plugin, deploy, commit, bitbucket, github
 Requires at least: 3.5.1
-Tested up to: 3.9.2
+Tested up to: 4.0
 Stable tag: trunk
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
