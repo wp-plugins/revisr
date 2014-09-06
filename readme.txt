@@ -99,6 +99,9 @@ Care should be taken when dealing with upgrades that depend on the database. Tak
 
 
 == Changelog ==
+= 1.6.3 =
+* Improvements to the list of committed files
+* Small bugfixes
 
 = 1.6.2 =
 * Added dedicated page for managing branches
