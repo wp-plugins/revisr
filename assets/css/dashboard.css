@@ -76,6 +76,9 @@
 #loader {
 	float: right;
 }
+#branches {
+	padding: 0;
+}
 #manage_branches {
 	font-size: 12px;
 }
@@ -178,17 +181,18 @@
 	width: 80px;
 	margin-top: -5px;
 }
-#revisr_alert {
-	margin-top: 20px;
+
+/* === MISC === */
+#gitignore {
+	width: 350px;
 }
-#revisr_error {
-	margin-top: 20px;
+.revisr-alert {
+	margin-top: 20px !important;
+	margin-bottom: 20px !important;
 }
 #poststuff {
 	padding-top: 0px !important;
 }
-
-/* === MISC === */
-#gitignore {
+#post-hook-input {
 	width: 350px;
 }

@@ -16,11 +16,14 @@
 			switch ( $_GET['status'] ) {
 				case "create_success":
 					$msg = sprintf( __( 'Successfully created branch: %s.', 'revisr' ), $_GET['branch'] );
-					echo '<div id="revisr-alert" class="updated"><p>' . $msg . '</p></div>';
+					echo '<div id="revisr-alert" class="updated" style="margin-top:20px;"><p>' . $msg . '</p></div>';
+					break;
+				case "create_error":
+					$msg = __( 'Failed to create the new branch.', 'revisr' );
 					break;
 				case "delete_success":
 					$msg = sprintf( __( 'Successfully deleted branch: %s.', 'revisr' ), $_GET['branch'] );
-					echo '<div id="revisr-error" class="error"><p>' . $msg . '</p></div>';
+					echo '<div id="revisr-alert" class="updated" style="margin-top:20px;"><p>' . $msg . '</p></div>';
 					break;
 				default:
 					//Do nothing.
@@ -39,14 +42,14 @@
 					</tr>
 				</thead>
 					<?php
-						$admin  = new Revisr_Admin;
-						$output = Revisr_Git::run( 'branch' );
+						$git = new Revisr_Git;
+						$output = $git->get_branches();
 
 						if ( is_array( $output ) ) {
 							foreach ($output as $key => $value){
 								
 								$branch 		= substr($value, 2);
-								$num_commits 	= $admin->count_commits( $branch );
+								$num_commits 	= Revisr_Admin::count_commits( $branch );
 								
 								if (substr( $value, 0, 1 ) === "*"){
 									echo "<tr>
@@ -54,17 +57,20 @@
 									<td class='center-td'>$num_commits</td>
 									<td class='center-td'>
 										<a class='button disabled branch-btn' onclick='preventDefault()' href='#'>Checkout</a>
+										<a class='button disabled branch-btn' onclick='preventDefault()' href='#'>Merge</a>
 										<a class='button disabled branch-btn' onclick='preventDefault()' href='#'>Delete</a>
 									</td></tr>";
 								} else {
-									$checkout_url = get_admin_url() . "admin-post.php?action=checkout&branch={$branch}";
-									$delete_url = get_admin_url() . "admin-post.php?action=delete_branch_form&branch={$branch}&TB_iframe=true&width=350&height=150";
+									$checkout_url 	= get_admin_url() . "admin-post.php?action=process_checkout&branch={$branch}";
+									$merge_url 		= get_admin_url() . "admin-post.php?action=process_merge&branch={$branch}";
+									$delete_url 	= get_admin_url() . "admin-post.php?action=delete_branch_form&branch={$branch}&TB_iframe=true&width=350&height=150";
 									?>
 									<tr>
 									<td><?php echo $branch; ?></td>
 									<td class="center-td"><?php echo $num_commits; ?></td>
 									<td class="center-td">
 										<a class='button branch-btn' href='<?php echo $checkout_url; ?>'><?php _e( 'Checkout', 'revisr' ); ?></a>
+										<a class='button branch-btn merge-btn' href="<?php echo $merge_url; ?>" value="<?php echo $branch; ?>">Merge</a>
 										<a class='button branch-btn delete-branch-btn thickbox' href='<?php echo $delete_url; ?>' title='<?php _e( 'Delete Branch', 'revisr' ); ?>'><?php _e( 'Delete', 'revisr' ); ?></a>
 									</td></tr>
 									<?php
@@ -96,7 +102,7 @@
 						<div class="form-field">
 							<input id="checkout-new-branch" type="checkbox" name="checkout_new_branch" style="width: 17px;">
 							<label  id="checkout-label" for="checkout-new-branch"><?php _e('Checkout new branch?'); ?></label>
-							<input type="hidden" name="action" value="create_branch">
+							<input type="hidden" name="action" value="process_create_branch">
 							<p id="add-branch-submit" class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="<?php _e( 'Create Branch', 'revisr' ); ?>" style="width:150px;"></p>
 						</div>
 					</form>
