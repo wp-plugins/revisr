@@ -3,14 +3,15 @@
  * class-revisr-setup.php
  *
  * Installs and configures Revisr.
- * @package Revisr
- * @license GPLv3
+ * 
+ * @package   Revisr
+ * @license   GPLv3
  * @link      https://revisr.io
  * @copyright 2014 Expanded Fronts, LLC
  */
 
-class Revisr_Setup
-{
+class Revisr_Setup {
+	
 	/**
 	 * The WordPress database object.
 	 */

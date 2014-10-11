@@ -94,6 +94,10 @@ Care should be taken when dealing with upgrades that depend on the database. Tak
 
 
 == Changelog ==
+= 1.7.1 =
+* Fixed potential PHP notice with tags widget
+* Fixed permissions to just check the ".git/" directory
+
 = 1.7 = 
 * Added ability to create a new repository if one does not already exist
 * Added ability to create automatic daily or weekly backups
