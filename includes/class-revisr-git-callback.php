@@ -135,11 +135,17 @@ class Revisr_Git_Callback extends Revisr_Git {
 	 */
 	public function success_init_repo() {
 		Revisr_Admin::clear_transients();
+		$user = wp_get_current_user();
+
 		if ( isset( $this->options['username'] ) && $this->options['username'] != "" ) {
 			$this->config_user_name( $this->options['username'] );
+		} else {
+			$this->config_user_name( $user->user_login );
 		}
 		if ( isset( $this->options['email'] ) && $this->options['email'] != "" ) {
 			$this->config_user_email( $this->options['email'] );
+		} else {
+			$this->config_user_email( $user->user_email );
 		}
 		if ( isset( $this->options['remote_name'] ) && $this->options['remote_name'] != "" ) {
 			$remote_name = $this->options['remote_name'];
@@ -206,7 +212,7 @@ class Revisr_Git_Callback extends Revisr_Git {
 			$msg = sprintf( _n( 'Successfully pulled %s commit from %s/%s.', 'Successfully pulled %s commits from %s/%s.', $args, 'revisr' ), $args, $this->remote, $this->branch );
 			Revisr_Admin::alert( $msg );
 
-			if ( isset( $this->options['import_db'] ) ) {
+			if ( $this->config_revisr_option( 'import-pulls' ) === 'true' ) {
 				$db = new Revisr_DB();
 				$db->import();
 			}
@@ -233,8 +239,7 @@ class Revisr_Git_Callback extends Revisr_Git {
 		$msg = sprintf( _n( 'Successfully pushed %s commit to %s/%s.', 'Successfully pushed %s commits to %s/%s.', $args, 'revisr' ), $args, $this->remote, $this->branch );
 		Revisr_Admin::alert( $msg );
 		Revisr_Admin::log( $msg, 'push' );
-		$get_webhook = $this->config_revisr_url( 'webhook' );
-		if ( is_array( $get_webhook ) ) {
+		if ( $this->config_revisr_url( 'webhook' ) !== false ) {
 			$remote = new Revisr_Remote();
 			$remote->send_request();
 		}

@@ -126,16 +126,14 @@ class Revisr {
 		add_action( 'admin_post_process_create_branch', array( $revisr_process, 'process_create_branch' ) );
 		add_action( 'admin_post_process_delete_branch', array( $revisr_process, 'process_delete_branch' ) );
 		add_action( 'admin_post_process_merge', array( $revisr_process, 'process_merge' ) );
+		add_action( 'admin_post_process_import', array( $revisr_process, 'process_import' ) );
 		add_action( 'admin_post_init_repo', array( $revisr_process, 'process_init' ) );
 		add_action( 'admin_post_process_revert', array( $revisr_process, 'process_revert' ) );
 		add_action( 'admin_post_process_view_diff', array( $revisr_process, 'process_view_diff' ) );
 		add_action( 'wp_ajax_discard', array( $revisr_process, 'process_discard' ) );
 		add_action( 'wp_ajax_process_push', array( $revisr_process, 'process_push' ) );
 		add_action( 'wp_ajax_process_pull', array( $revisr_process, 'process_pull' ) );
-
-		if ( isset( $this->options['auto_pull'] ) ) {
-			add_action( 'admin_post_nopriv_revisr_update', array( $revisr_process, 'process_pull' ) );
-		}
+		add_action( 'admin_post_nopriv_revisr_update', array( $revisr_process, 'process_pull' ) );
 	}
 
 	/**
@@ -156,6 +154,10 @@ class Revisr {
 		add_filter( 'custom_menu_order', array( $revisr_setup, 'revisr_commits_submenu_order' ) );
 		add_action( 'wp_ajax_recent_activity', array( $revisr_setup, 'recent_activity' ) );
 		$revisr_settings = new Revisr_Settings( $this->options );
+
+		if ( get_option( 'revisr_db_version' ) === '1.0' ) {
+			add_action( 'admin_init', array( $revisr_setup, 'do_upgrade' ) );
+		}
 	}
 
 	/**
@@ -268,6 +270,8 @@ class Revisr {
 		
 	  	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 	   	dbDelta( $sql );
-	   	add_option( 'revisr_db_version', '1.0' );
-	}	
+	   	if ( get_option( 'revisr_db_version' ) === false ) {
+	   		add_option( 'revisr_db_version', '1.1' );
+	   	}
+	}
 }
