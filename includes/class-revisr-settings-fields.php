@@ -199,7 +199,7 @@ class Revisr_Settings_Fields {
 	public function notifications_callback() {
 		printf(
 			'<input type="checkbox" id="notifications" name="revisr_general_settings[notifications]" %s />
-			<label for="notifications"><span class="description">%s</span></span>',
+			<label for="notifications"><span class="description">%s</span></label>',
 			isset( $this->options['notifications'] ) ? "checked" : '',
 			__( 'Enabling notifications will send updates about new commits, pulls, and pushes to the email address above.', 'revisr' )
 		);
@@ -271,7 +271,7 @@ class Revisr_Settings_Fields {
 		// Grab the URL from the .git/config as it MAY be replaced in the database.
 		$get_url = $this->git->config_revisr_url( 'webhook' );
 		if ( $get_url !== false ) {
-			$webhook_url = $get_url;
+			$webhook_url = urldecode($get_url);
 		} else {
 			$webhook_url = '';
 		}
@@ -332,7 +332,7 @@ class Revisr_Settings_Fields {
 			'<input type="checkbox" id="auto_pull" name="revisr_remote_settings[auto_pull]" %s />
 			<label for="auto_pull">%s</label>',
 			$checked,
-			__( 'Check to allow Revisr to automatically pull commits from a remote repository.', 'revisr' )
+			__( 'Check to generate the Revisr Webhook and allow Revisr to automatically pull commits from a remote repository.', 'revisr' )
 		);
 		$remote 	= new Revisr_Remote();
 		$token 		= $remote->get_token();
