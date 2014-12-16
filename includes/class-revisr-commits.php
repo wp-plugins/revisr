@@ -25,7 +25,8 @@ class Revisr_Commits {
 	 * @access public
 	 */
 	public function __construct() {
-		$this->git = new Revisr_Git();
+		$revisr 	= Revisr::get_instance();
+		$this->git 	= $revisr->git;
 	}
 
 	/**
@@ -51,7 +52,7 @@ class Revisr_Commits {
 		$capabilities = array(
 			'edit_post'           => 'activate_plugins',
 			'read_post'           => 'activate_plugins',
-			'delete_post'         => 'activate_plugins',
+			'delete_posts'        => 'activate_plugins',
 			'edit_posts'          => 'activate_plugins',
 			'edit_others_posts'   => 'activate_plugins',
 			'publish_posts'       => 'activate_plugins',

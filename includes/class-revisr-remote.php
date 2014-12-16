@@ -58,19 +58,6 @@ class Revisr_Remote extends Revisr_Admin {
 	}
 
 	/**
-	 * Gets the live URL, exits the script if one does not exist.
-	 * @access private
-	 * @return string
-	 */
-	private function get_live_url() {
-		if ( isset( $this->options['live_url'] ) && $this->options['live_url'] != '' ) {
-			return $this->options['live_url'];
-		} else {
-			wp_die( __( 'Live URL not set.', 'revisr' ) );
-		}
-	}
-
-	/**
 	 * Sends a new HTTP request to the live site.
 	 * @access public
 	 */
@@ -92,7 +79,7 @@ class Revisr_Remote extends Revisr_Admin {
 		$get_url = $this->git->config_revisr_url( 'webhook' );
 
 		if ( $get_url !== false ) {
-			$webhook = $get_url;
+			$webhook = urldecode( $get_url );
 			$request = wp_remote_post( $webhook, $args );
 			if ( is_wp_error( $request ) ) {
 				Revisr_Admin::log( __( 'Error contacting webhook URL.', 'revisr' ), 'error' );

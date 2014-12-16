@@ -22,10 +22,10 @@ class Revisr_DB {
 	protected $conn;
 
 	/**
-	 * Stores the current working directory.
+	 * Stores the backup directory.
 	 * @var string
 	 */
-	protected $current_dir;
+	protected $backup_dir;
 
 	/**
 	 * Stores the upload directory.
@@ -60,14 +60,14 @@ class Revisr_DB {
 	/**
 	 * Initiate the class.
 	 * @access public
-	 * @param  string $path Optional, overrides the saved setting (for testing).
 	 */
-	public function __construct( $path = '' ) {
+	public function __construct() {
 		global $wpdb;
+		$revisr 			= Revisr::get_instance();
 		$this->wpdb 		= $wpdb;
-		$this->git 			= new Revisr_Git();
-		$this->current_dir 	= getcwd();
+		$this->git 			= $revisr->git;
 		$this->upload_dir 	= wp_upload_dir();
+		$this->backup_dir	= $this->upload_dir['basedir'] . '/revisr-backups/';
 		$this->options 		= Revisr::get_options();
 
 		$get_path = $this->git->config_revisr_path( 'mysql' );
@@ -81,12 +81,11 @@ class Revisr_DB {
 	}
 
 	/**
-	 * Close any pending connections and switch back to the previous directory.
+	 * Close any pending connections.
 	 * @access public
 	 */
 	public function __destruct() {
 		$this->wpdb->flush();
-		chdir( $this->current_dir );
 	}
 
 	/**
@@ -122,30 +121,25 @@ class Revisr_DB {
 	 * Creates the backup folder and adds the .htaccess if necessary.
 	 * @access private
 	 */
-	public function setup_env() {
-		// Create the backups directory if it doesn't exist.
-		$backup_dir = $this->upload_dir['basedir'] . '/revisr-backups/';
-		if ( is_dir( $backup_dir ) ) {
-			chdir( $backup_dir );
+	private function setup_env() {
+		// Check if the backups directory has already been created.
+		if ( is_dir( $this->backup_dir ) ) {
+			return true;
 		} else {
-			mkdir( $backup_dir );
-			chdir( $backup_dir );
-		}
+			// Make the backups directory.
+			mkdir( $this->backup_dir );
 
-		// Prevent '.sql' files from public access.
-		if ( ! file_exists( '.htaccess' ) ) {
+			// Add .htaccess to prevent direct access.
 			$htaccess_content = '<FilesMatch "\.sql">' .
 			PHP_EOL . 'Order allow,deny' .
 			PHP_EOL . 'Deny from all' .
 			PHP_EOL . 'Satisfy All' .
 			PHP_EOL . '</FilesMatch>';
-			file_put_contents( '.htaccess', $htaccess_content );
-		}
+			file_put_contents( $this->backup_dir . '/.htaccess', $htaccess_content );
 
-		// Prevent directory listing.
-		if ( ! file_exists( 'index.php' ) ) {
+			// Add index.php to prevent directory listing.
 			$index_content = '<?php // Silence is golden' . PHP_EOL;
-			file_put_contents( 'index.php', $index_content );
+			file_put_contents( $this->backup_dir . '/index.php', $index_content );
 		}
 	}
 
@@ -167,17 +161,16 @@ class Revisr_DB {
 	 * @return array
 	 */
 	public function get_tables_not_in_db() {
-		$dir 			= getcwd();
 		$backup_tables	= array();
 		$db_tables 		= $this->get_tables();
-		foreach ( scandir( $dir ) as $file ) {
+		foreach ( scandir( $this->backup_dir) as $file ) {
 
 			if ( substr( $file, 0, 7 ) !== 'revisr_' ) {
 				continue;
 			}
 
-			$table_temp = substr( $file, 7 );
-	        $backup_tables[] = substr( $table_temp, 0, -4 );
+			$table_temp 		= substr( $file, 7 );
+	        $backup_tables[] 	= substr( $table_temp, 0, -4 );
     	}
 
     	$new_tables = array_diff( $backup_tables, $db_tables );
@@ -210,7 +203,7 @@ class Revisr_DB {
 	 * @return boolean
 	 */
 	public function run( $action, $tables = array(), $args = '' ) {
-		// Initialize the response array.
+		// Create the status array.
 		$status = array();
 
 		// Iterate through the tables and perform the action.
@@ -241,7 +234,7 @@ class Revisr_DB {
 	 * @param  string $table The table to add.
 	 */
 	private function add_table( $table ) {
-		$this->git->run( "add {$this->upload_dir['basedir']}/revisr-backups/revisr_$table.sql" );
+		$this->git->run( "add {$this->backup_dir}revisr_$table.sql" );
 	}
 
 	/**
@@ -273,7 +266,7 @@ class Revisr_DB {
 	 */
 	private function backup_table( $table ) {
 		$conn = $this->build_conn( $table );
-		exec( "{$this->path}mysqldump $conn > revisr_$table.sql --skip-comments" );
+		exec( "{$this->path}mysqldump $conn > {$this->backup_dir}revisr_$table.sql --skip-comments" );
 		$this->add_table( $table );
 		return $this->verify_backup( $table );
 	}
@@ -337,27 +330,28 @@ class Revisr_DB {
 			$tracked_tables = $this->get_tracked_tables();
 			$new_tables 	= $this->get_tables_not_in_db();
 			$all_tables		= array_unique( array_merge( $new_tables, $tracked_tables ) );
+			$replace_url 	= $this->git->config_revisr_url( 'dev' ) ? $this->git->config_revisr_url( 'dev' ) : '';
 
 			if ( ! empty( $new_tables ) ) {
 				// If there are new tables that were imported.
 				if ( isset( $this->options['db_tracking'] ) && $this->options['db_tracking'] == 'all_tables' ) {
 					// If the user is tracking all tables, import all tables.
-					$this->run( 'import', $all_tables, $this->git->config_revisr_url( 'dev' ) );
+					$this->run( 'import', $all_tables, $replace_url );
 				} else {
 					// Import only tracked tables, but provide a warning and import link.
-					$this->run( 'import', $tracked_tables, $this->git->config_revisr_url( 'dev' ) );
+					$this->run( 'import', $tracked_tables, $replace_url );
 					$url = wp_nonce_url( get_admin_url() . 'admin-post.php?action=import_tables_form&TB_iframe=true&width=350&height=200', 'import_table_form', 'import_nonce' );
 					$msg = sprintf( __( 'New database tables detected. <a class="thickbox" title="Import Tables" href="%s">Click here</a> to view and import.', 'revisr' ), $url );
 					Revisr_Admin::log( $msg, 'db' );
 				}
 			} else {
 				// If there are no new tables, go ahead and import the tracked tables.
-				$this->run( 'import', $tracked_tables, $this->git->config_revisr_url( 'dev' ) );
+				$this->run( 'import', $tracked_tables, $replace_url );
 			}
 
 		} else {
 			// Import the provided tables.
-			$this->run( 'import', $tables, $this->git->config_revisr_url( 'dev' ) );
+			$this->run( 'import', $tables, $replace_url );
 		}
 	}
 
@@ -379,54 +373,57 @@ class Revisr_DB {
 			Revisr_Admin::log( $msg, 'error' );
 			return;
 		}
-		// Try to pass the file directly to MySQL, fallback to user-defined path, then to WPDB.
+
 		if ( $mysql = exec( 'which mysql' ) ) {
+			// Try to pass the file directly to MySQL.
 			$conn = $this->build_conn();
-			exec( "{$mysql} {$conn} < revisr_$table.sql" );
+			exec( "{$mysql} {$conn} < {$this->backup_dir}revisr_$table.sql" );
 			if ( $replace_url !== '' && $replace_url !== false ) {
 				$this->revisr_srdb( $table, $replace_url, $live_url );
 			}
 			return true;
 		} elseif ( $mysql = exec( "which {$this->path}mysql" ) ) {
+			// Fallback to the user-defined path.
 			$conn = $this->build_conn();
-			exec( "{$mysql} {$conn} < revisr_$table.sql" );
+			exec( "{$mysql} {$conn} < {$this->backup_dir}revisr_$table.sql" );
 			if ( $replace_url !== '' && $replace_url !== false ) {
 				$this->revisr_srdb( $table, $replace_url, $live_url );
 			}
 			return true;
-		}
-		// Fallback on manually querying the file.
-		$fh 	= fopen( "revisr_$table.sql", 'r' );
-		$size	= filesize( "revisr_$table.sql" );
-		$status = array(
-			'errors' 	=> 0,
-			'updates' 	=> 0
-		);
+		} else {
+			// Fallback on manually querying the file.
+			$fh 	= fopen( "{$this->backup_dir}revisr_$table.sql", 'r' );
+			$size	= filesize( "{$this->backup_dir}revisr_$table.sql" );
+			$status = array(
+				'errors' 	=> 0,
+				'updates' 	=> 0
+			);
 
-		while( !feof( $fh ) ) {
-			$query = trim( stream_get_line( $fh, $size, ';' . PHP_EOL ) );
-			if ( empty( $query ) ) {
-				$status['dropped_queries'][] = $query;
-				continue;
+			while( !feof( $fh ) ) {
+				$query = trim( stream_get_line( $fh, $size, ';' . PHP_EOL ) );
+				if ( empty( $query ) ) {
+					$status['dropped_queries'][] = $query;
+					continue;
+				}
+				if ( $this->wpdb->query( $query ) === false ) {
+					$status['errors']++;
+					$status['bad_queries'][] = $query;
+				} else {
+					$status['updates']++;
+					$status['good_queries'][] = $query;
+				}
 			}
-			if ( $this->wpdb->query( $query ) === false ) {
-				$status['errors']++;
-				$status['bad_queries'][] = $query;
-			} else {
-				$status['updates']++;
-				$status['good_queries'][] = $query;
+			fclose( $fh );
+
+			if ( $replace_url !== '' ) {
+				$this->revisr_srdb( $table, $replace_url, $live_url );
 			}
-		}
-		fclose( $fh );
 
-		if ( $replace_url != '' ) {
-			$this->revisr_srdb( $table, $replace_url, $live_url );
+			if ( $status['errors'] !== 0 ) {
+				return false;
+			}
+			return true;			
 		}
-
-		if ( $status['errors'] !== 0 ) {
-			return false;
-		}
-		return true;
 	}
 
 	/**
@@ -479,10 +476,9 @@ class Revisr_DB {
 			} else {
 				// Import the old revisr_db_backup.sql file.
 				$backup_method 	= 'old';
-				chdir( $this->upload_dir['basedir'] );
 
 				// Make sure the SQL file exists and is not empty.
-				if ( $this->verify_backup( 'db_backup' ) === false ) {
+				if ( ! file_exists( $this->upload_dir['basedir'] . '/revisr_db_backup.sql' ) || filesize( $this->upload_dir['basedir'] . '/revisr_db_backup.sql' ) < 1000 ) {
 					wp_die( __( 'The backup file does not exist or has been corrupted.', 'revisr' ) );
 				}
 				clearstatcache();
@@ -490,7 +486,7 @@ class Revisr_DB {
 				$checkout = $this->git->run( "checkout {$commit} {$this->upload_dir['basedir']}/revisr_db_backup.sql" );
 
 				if ( $checkout !== 1 ) {
-					exec( "{$this->path}mysql {$this->conn} < revisr_db_backup.sql" );
+					exec( "{$this->path}mysql {$this->conn} < {$this->upload_dir['basedir']}/revisr_db_backup.sql" );
 					$this->git->run( "checkout {$this->git->branch} {$this->upload_dir['basedir']}/revisr_db_backup.sql" );
 				} else {
 					wp_die( __( 'Failed to revert the database to an earlier commit.', 'revisr' ) );
@@ -522,7 +518,7 @@ class Revisr_DB {
 	 * @return boolean
 	 */
 	private function revert_table( $table, $commit ) {
-		$checkout = $this->git->run( "checkout $commit {$this->upload_dir['basedir']}/revisr-backups/revisr_$table.sql" );
+		$checkout = $this->git->run( "checkout $commit {$this->backup_dir}revisr_$table.sql" );
 		return $checkout;
 	}
 
@@ -548,7 +544,7 @@ class Revisr_DB {
 	 * @return boolean
 	 */
 	public function verify_backup( $table ) {
-		if ( ! file_exists( "revisr_$table.sql" ) || filesize( "revisr_$table.sql" ) < 1000 ) {
+		if ( ! file_exists( "{$this->backup_dir}revisr_$table.sql" ) || filesize( "{$this->backup_dir}revisr_$table.sql" ) < 1000 ) {
 			return false;
 		}
 		return true;

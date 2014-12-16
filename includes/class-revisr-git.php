@@ -52,9 +52,12 @@ class Revisr_Git {
 	public function __construct() {
 		$this->dir 		= $this->current_dir();
 		$this->options  = Revisr::get_options();
-		$this->branch 	= $this->current_branch();
-		$this->remote 	= $this->current_remote();
-		$this->hash 	= $this->current_commit();
+
+		if ( $this->is_repo() ) {
+			$this->branch 	= $this->current_branch();
+			$this->remote 	= $this->current_remote();
+			$this->hash 	= $this->current_commit();			
+		}
 	}
 
 	/**
@@ -135,6 +138,7 @@ class Revisr_Git {
 	 * @access public
 	 * @param  string $env The associated environment.
 	 * @param  string $url The URL to store.
+	 * @return string|boolean
 	 */
 	public function config_revisr_url( $env, $url = '' ) {
 		if ( $url != '' ) {
@@ -402,7 +406,6 @@ class Revisr_Git {
 	 * @access public
 	 */
 	public function push() {
-		$this->reset();
 		$push = $this->run( "push {$this->remote} HEAD --quiet", __FUNCTION__, $this->count_unpushed( false ) );
 		return $push;
 	}
@@ -442,7 +445,7 @@ class Revisr_Git {
 	public function run( $command, $callback = '', $args = '' ) {
 		
 		// Run the actual Git command.
-		$cmd = "git $command";
+		$cmd = escapeshellcmd( "git $command" );
 		$dir = getcwd();
 		chdir( $this->dir );
 		exec( $cmd, $output, $error );

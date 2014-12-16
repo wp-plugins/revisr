@@ -38,8 +38,9 @@ class Revisr_Process {
 	 * @access public
 	 */
 	public function __construct() {
-		$this->db 		= new Revisr_DB();
-		$this->git 		= new Revisr_Git();
+		$revisr 		= Revisr::get_instance();
+		$this->db 		= $revisr->db;
+		$this->git 		= $revisr->git;
 		$this->options 	= Revisr::get_options();
 	}
 
@@ -208,7 +209,7 @@ class Revisr_Process {
 		$from_dash = check_ajax_referer( 'dashboard_nonce', 'security', false );
 		if ( $from_dash == false ) {
 
-			if ( $this->git->config_revisr_option( 'import-pulls' ) !== 'true' ) {
+			if ( $this->git->config_revisr_option( 'auto-pull' ) !== 'true' ) {
 				wp_die( __( 'Cheatin&#8217; uh?', 'revisr' ) );
 			}
 
