@@ -38,8 +38,9 @@ class Revisr_Admin {
 	 * @access public
 	 */
 	public function __construct() {
-		$this->db 		= new Revisr_DB();
-		$this->git 		= new Revisr_Git();
+		$revisr 		= Revisr::get_instance();
+		$this->db 		= $revisr->db;
+		$this->git 		= $revisr->git;
 		$this->options 	= Revisr::get_options();
 	}
 
@@ -105,7 +106,7 @@ class Revisr_Admin {
 	 */
 	public static function log( $message, $event ) {
 		global $wpdb;
-		$time  = current_time( 'mysql', 1 );
+		$time  = current_time( 'mysql' );
 		$table = $wpdb->prefix . 'revisr';
 		$wpdb->insert(
 			"$table",
