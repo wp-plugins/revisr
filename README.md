@@ -1,4 +1,4 @@
-#Revisr [![Build Status](https://travis-ci.org/ExpandedFronts/revisr.svg?branch=master)](https://travis-ci.org/ExpandedFronts/revisr) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/ExpandedFronts/revisr/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/ExpandedFronts/revisr/?branch=master)
+#Revisr [![Build Status](https://travis-ci.org/ExpandedFronts/revisr.svg?branch=master)](https://travis-ci.org/ExpandedFronts/revisr) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/ExpandedFronts/revisr/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/ExpandedFronts/Revisr/?branch=master)
 
 ##Description##
 
@@ -49,6 +49,9 @@ This issue can be avoided entirely by using SSH to authenticate, which is recomm
 It is also adviseable to add Revisr to the gitignore file via the settings page to make sure that reverts don't rollback the plugins' functionality. 
 
 ## Changelog ##
+
+#### 1.8.3 ####
+* Fixed bug with spaces in filename
 
 #### 1.8.2 ####
 * Improved plugin performance
