@@ -58,6 +58,11 @@ It is also adviseable to add Revisr to the gitignore file via the settings page 
 
 == Frequently Asked Questions ==
 
+= Can I damage my site with this plugin? =
+This plugin is quite stable and won't damage your website by itself. That being said, it is always recommended to have a verified backup of your website before performing any major operations such as reverts or discarding lots of files.
+
+Perhaps the easiest way to do this is to setup Bitbucket or GitHub as a remote repository and make sure that you see your current files and database backup files in the remote repo before doing a revert locally.
+
 = How does Revisr handle the database? =
 You have complete control, and can decide whether you want to track the entire database, just certain tables, or if you don't want to track the database at all. Then, during a backup, the tracked database tables are exported via "mysqldump". When importing or restoring the database to an earlier commit, Revisr first takes a backup of the existing database, creating a restore point from immediately before the import that can be reverted to if needed.
 
@@ -65,9 +70,6 @@ You can also set a "Development URL" that will be automatically replaced in the 
 
 = Why aren't my commits being pushed to Bitbucket/GitHub? =
 This is either an authentication issue or the remote branch is ahead of yours.
-
-= Can I damage my site with this plugin? =
-Care should be taken when dealing with upgrades that depend on the database. Taking verified backups before and after major changes is always recommended.
 
 == Screenshots ==
 
