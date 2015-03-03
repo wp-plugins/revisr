@@ -69,7 +69,7 @@ class Revisr_Git {
 	 * @access public
 	 */
 	public function __construct() {
-		
+
 		// Necessary for execution of Revisr.
 		$this->current_dir 	= getcwd();
 		$this->is_repo 		= true;
@@ -95,9 +95,9 @@ class Revisr_Git {
 	 */
 	public function run( $command, $args, $callback = '', $info = '' ) {
 		// Setup the command for safe usage.
-		$safe_path 		= escapeshellarg( $this->git_path );
-		$safe_cmd 		= escapeshellarg( $command );
-		$safe_args 		= join( ' ', array_map( 'escapeshellarg', $args ) );
+		$safe_path 		= Revisr_Admin::escapeshellarg( $this->git_path );
+		$safe_cmd 		= Revisr_Admin::escapeshellarg( $command );
+		$safe_args 		= join( ' ', array_map( array( 'Revisr_Admin', 'escapeshellarg' ), $args ) );
 
 		// Run the command.
 		chdir( $this->git_dir );
@@ -167,7 +167,7 @@ class Revisr_Git {
 		if ( isset( $_REQUEST['autopush_enabled'] ) && ! isset( $_REQUEST['auto_push'] ) ) {
 			return;
 		}
-		
+
 		if ( $this->get_config( 'revisr', 'auto-push' ) === 'true' || isset( $_REQUEST['auto_push'] ) ) {
 			$this->push();
 		}
@@ -192,7 +192,7 @@ class Revisr_Git {
 		if ( is_user_logged_in() ) {
 			$current_user 	= wp_get_current_user();
 			$author 	 	= "$current_user->user_login <$current_user->user_email>";
-			$commit 		= $this->run( 'commit', array( '-m', $message, '--author', $author ), $callback );		
+			$commit 		= $this->run( 'commit', array( '-m', $message, '--author', $author ), $callback );
 		} else {
 			$commit = $this->run( 'commit', array( '-m', $message ), $callback );
 		}
@@ -279,7 +279,7 @@ class Revisr_Git {
 	public function create_branch( $branch ) {
 		$new_branch = $this->run( 'branch', array( $branch ) );
 		return $new_branch;
-	}	
+	}
 
 	/**
 	 * Returns the current branch.
@@ -400,7 +400,7 @@ class Revisr_Git {
 			return true;
 		} else {
 			return false;
-		}		
+		}
 	}
 
 	/**
@@ -465,11 +465,11 @@ class Revisr_Git {
 	 */
 	public function stage_files( $staged_files ) {
 		$errors = array();
-		
+
 		foreach ( $staged_files as $result ) {
 			$file 	= substr( $result, 3 );
-			$status = Revisr_Git::get_status( substr( $result, 0, 2 ) );
-			
+			$status = self::get_status( substr( $result, 0, 2 ) );
+
 			if ( $status == __( 'Deleted', 'revisr' ) ) {
 				if ( $this->run( 'rm', array( $file ) ) === false ) {
 					$errors[] = $file;
@@ -486,7 +486,7 @@ class Revisr_Git {
 			Revisr_Admin::alert( $msg, true );
 			Revisr_Admin::log( __( 'Error staging files.', 'revisr' ), 'error' );
 		}
-	}	
+	}
 
 	/**
 	 * Returns the current status.
