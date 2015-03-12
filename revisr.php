@@ -8,7 +8,7 @@
  * Plugin Name:       Revisr
  * Plugin URI:        http://revisr.io/
  * Description:       A plugin that allows users to manage WordPress websites with Git repositories.
- * Version:           1.9
+ * Version:           1.9.2
  * Author:            Expanded Fronts, LLC
  * Author URI:        http://expandedfronts.com/
  * License:           GPL-3.0+
@@ -16,17 +16,17 @@
  * Text Domain:       revisr
  * Domain Path:       /languages
  * Network: 		  true
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -37,7 +37,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * The main Revisr class. Initializes the plugin loads any
  * required hooks and dependencies.
- * 
+ *
  * @since 1.8.2
  */
 class Revisr {
@@ -129,19 +129,18 @@ class Revisr {
 	 */
 	public static function get_instance() {
 		if ( null == self::$instance ) {
-			self::$instance 				= new self;
-			self::$instance->table_name 	= self::$instance->get_table_name();
-			self::$instance->options 		= self::$instance->get_options();
-			
+			self::$instance 			= new self;
+			self::$instance->options 	= self::$instance->get_options();
+
 			self::$instance->define_constants();
-			
+
 			// Try to autoload the classes.
 			if ( function_exists( 'spl_autoload_register' ) ) {
 				spl_autoload_register( array( __CLASS__, 'autoload' ) );
 			} else {
 				self::$instance->load_dependencies();
 			}
-			
+
 			self::$instance->set_locale();
 			self::$instance->load_public_hooks();
 
@@ -153,7 +152,7 @@ class Revisr {
 	}
 
 	/**
-	 * Callback for spt_autoload_register.
+	 * Callback for spl_autoload_register.
 	 * @access private
 	 * @param  string $class The class to load.
 	 * @since  1.9
@@ -177,7 +176,7 @@ class Revisr {
 		require_once REVISR_PATH . 'includes/class-revisr-db.php';
 		require_once REVISR_PATH . 'includes/class-revisr-git-callback.php';
 		require_once REVISR_PATH . 'includes/class-revisr-cron.php';
-		
+
 		// Classes that should only be loaded for admins.
 		if ( current_user_can( 'install_plugins' ) && is_admin() ) {
 			require_once REVISR_PATH . 'includes/class-revisr-compatibility.php';
@@ -201,7 +200,7 @@ class Revisr {
 		// The URL of the plugin base directory.
 		define( 'REVISR_URL', plugin_dir_url( REVISR_FILE ) );
 		// The current version of the plugin.
-		define( 'REVISR_VERSION', '1.9' );
+		define( 'REVISR_VERSION', '1.9.2' );
 	}
 
 	/**
@@ -261,7 +260,7 @@ class Revisr {
 		add_action( 'admin_menu', array( self::$instance->admin, 'menus' ), 2 );
 		add_action( 'admin_bar_menu', array( self::$instance->admin, 'admin_bar' ), 999 );
 		add_filter( 'custom_menu_order', array( self::$instance->admin, 'revisr_submenu_order' ) );
-		
+
 		// Callbacks for AJAX UI
 		add_action( 'wp_ajax_render_alert', array( self::$instance->admin, 'render_alert' ) );
 		add_action( 'wp_ajax_ajax_button_count', array( self::$instance->admin, 'ajax_button_count' ) );
@@ -274,10 +273,11 @@ class Revisr {
 		add_action( 'admin_post_import_tables_form', array( self::$instance->admin, 'import_tables_form' ) );
 		add_action( 'admin_post_revert_form', array( self::$instance->admin, 'revert_form' ) );
 		add_action( 'admin_post_revisr_view_status', array( self::$instance->admin, 'view_status' ) );
+		add_action( 'admin_post_revisr_view_error', array( self::$instance->admin, 'view_error' ) );
 
 		// Displays the "Sponsored by Site5" logo.
 		add_action( 'admin_notices', array( self::$instance->admin, 'site5_notice' ) );
-		
+
 		// Update the database schema if necessary.
 		if ( get_option( 'revisr_db_version' ) === '1.0' ) {
 			add_action( 'admin_init', array( self::$instance->admin, 'do_upgrade' ) );
@@ -341,7 +341,7 @@ class Revisr {
 			event VARCHAR(42) NOT NULL,
 			UNIQUE KEY id (id)
 			);";
-		
+
 	  	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 	   	dbDelta( $sql );
 	   	if ( get_option( 'revisr_db_version' ) === false ) {
@@ -355,8 +355,8 @@ class Revisr {
 	 * @param array $links The links assigned to Revisr.
 	 */
 	public static function settings_link( $links ) {
-		$settings_link = '<a href="admin.php?page=revisr_settings">' . __( 'Settings', 'revisr' ) . '</a>'; 
-  		array_unshift( $links, $settings_link ); 
+		$settings_link = '<a href="admin.php?page=revisr_settings">' . __( 'Settings', 'revisr' ) . '</a>';
+  		array_unshift( $links, $settings_link );
   		return $links;
 	}
 
@@ -364,7 +364,7 @@ class Revisr {
 
 /**
  * Returns a single instance of the Revisr plugin.
- * 
+ *
  * @since 	1.8.2
  * @return 	object
  */

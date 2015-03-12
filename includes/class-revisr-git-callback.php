@@ -1,9 +1,9 @@
 <?php
 /**
  * class-revisr-git-callback.php
- * 
+ *
  * Processes Git responses and errors.
- * 
+ *
  * @package   	Revisr
  * @license   	GPLv3
  * @link      	https://revisr.io
@@ -44,7 +44,7 @@ class Revisr_Git_Callback {
 	public function null_( $output = '', $args = '' ) {
 		return false;
 	}
-	
+
 	/**
 	 * Callback for a successful checkout.
 	 * @access public
@@ -77,25 +77,33 @@ class Revisr_Git_Callback {
 		$view_link 		= get_admin_url() . "post.php?post={$id}&action=edit";
 		$commit_hash 	= $this->revisr->git->current_commit();
 		$commit_msg 	= $_REQUEST['post_title'];
+
+		// Add post-commit meta.
 		add_post_meta( $id, 'commit_hash', $commit_hash );
 		add_post_meta( $id, 'branch', $this->revisr->git->branch );
+		add_post_meta( $id, 'commit_status', __( 'Committed', 'revisr' ) );
+
 		// Backup the database if necessary
 		if ( isset( $_REQUEST['backup_db'] ) && $_REQUEST['backup_db'] == 'on' ) {
 			$this->revisr->db->backup();
 			add_post_meta( $id, 'db_hash', $this->revisr->git->current_commit() );
 			add_post_meta( $id, 'backup_method', 'tables' );
 		}
+
 		// Log the event.
 		$msg = sprintf( __( 'Committed <a href="%s">#%s</a> to the local repository.', 'revisr' ), $view_link, $commit_hash );
 		Revisr_Admin::log( $msg, 'commit' );
+
 		// Notify the admin.
 		$email_msg = sprintf( __( 'A new commit was made to the repository: <br> #%s - %s', 'revisr' ), $commit_hash, $commit_msg );
 		Revisr_Admin::notify( get_bloginfo() . __( ' - New Commit', 'revisr' ), $email_msg );
+
 		// Add a tag if necessary.
 		if ( isset( $_REQUEST['tag_name'] ) ) {
 			$this->revisr->git->tag( $_POST['tag_name'] );
 			add_post_meta( $id, 'git_tag', $_POST['tag_name'] );
 		}
+
 		// Push if necessary.
 		$this->revisr->git->auto_push();
 		return $commit_hash;
@@ -105,11 +113,18 @@ class Revisr_Git_Callback {
 	 * Callback for a failed commit.
 	 * @access public
 	 */
-	public function null_commit( $output = '', $args = '' ) {
-		$msg = __( 'Error committing the changes to the local repository.', 'revisr' );
+	public function null_commit( $output = array(), $args = '' ) {
+		$id 	= get_the_ID();
+		$msg 	= __( 'Error committing the changes to the local repository.', 'revisr' );
+		$url 	= get_admin_url() . 'post.php?post=' . $id . '&action=edit&message=44';
+
+		add_post_meta( $id, 'commit_status', __( 'Error', 'revisr' ) );
+		add_post_meta( $id, 'error_details', $output );
+		Revisr_Admin::alert( $msg, true, $output );
 		Revisr_Admin::log( $msg, 'error' );
-		$url = get_admin_url() . 'post-new.php?post_type=revisr_commits&message=44';
+
 		wp_redirect( $url );
+		exit();
 	}
 
 	/**
@@ -222,7 +237,7 @@ class Revisr_Git_Callback {
 	public function null_merge( $output = '', $args = '' ) {
 		$log_msg 	= sprintf( __( 'Error merging branch %s into %s.', 'revisr'), $_REQUEST['branch'], $this->revisr->git->branch );
 		$alert_msg 	= sprintf( __( 'There was an error merging branch %s into your current branch. The merge was aborted to avoid conflicts.', 'revisr' ), $_REQUEST['branch'] );
-		Revisr_Admin::alert( $alert_msg, true );
+		Revisr_Admin::alert( $alert_msg, true, $output );
 		Revisr_Admin::log( $log_msg, 'error' );
 		echo "<script>
 				window.top.location.href = '" . get_admin_url() . "admin.php?page=revisr';
@@ -233,12 +248,40 @@ class Revisr_Git_Callback {
 	 * Returns if a pull was successful.
 	 * @access public
 	 */
-	public function success_pull( $output = '', $args = '' ) {
-		if ( $args == '0' ) {
+	public function success_pull( $output = array(), $args = array() ) {
+		$commits_since 	= $args;
+		$num_commits 	= count( $commits_since );
+
+		if ( 0 === $num_commits ) {
 			$msg = __( 'The local repository is already up-to-date with the remote repository.', 'revisr' );
 			Revisr_Admin::alert( $msg );
 		} else {
-			$msg = sprintf( _n( 'Successfully pulled %s commit from %s/%s.', 'Successfully pulled %s commits from %s/%s.', $args, 'revisr' ), $args, $this->revisr->git->remote, $this->revisr->git->branch );
+			foreach ( $commits_since as $commit ) {
+
+				$commit_hash 	= substr( $commit, 0, 7 );
+				$commit_msg 	= substr( $commit, 40 );
+				$show_files 	= $this->revisr->git->run( 'show', array( '--pretty=format:', '--name-status', $commit_hash ) );
+
+				if ( is_array( $show_files ) ) {
+					$files_changed = array_filter( $show_files );
+					$post = array(
+						'post_title'	=> $commit_msg,
+						'post_content'	=> '',
+						'post_type'		=> 'revisr_commits',
+						'post_status'	=> 'publish',
+					);
+					$post_id = wp_insert_post( $post );
+					add_post_meta( $post_id, 'commit_hash', $commit_hash );
+					add_post_meta( $post_id, 'branch', $this->revisr->git->branch );
+					add_post_meta( $post_id, 'files_changed', count( $files_changed ) );
+					add_post_meta( $post_id, 'committed_files', $files_changed );
+					$view_link = get_admin_url() . "post.php?post=$post_id&action=edit";
+					$msg = sprintf( __( 'Pulled <a href="%s">#%s</a> from %s/%s.', 'revisr' ), $view_link, $commit_hash, $this->revisr->git->remote, $this->revisr->git->branch );
+					Revisr_Admin::log( $msg, 'pull' );
+				}
+			}
+
+			$msg = sprintf( _n( 'Successfully pulled %s commit from %s/%s.', 'Successfully pulled %s commits from %s/%s.', $num_commits, 'revisr' ), $num_commits, $this->revisr->git->remote, $this->revisr->git->branch );
 			Revisr_Admin::alert( $msg );
 
 			if ( $this->revisr->git->get_config( 'revisr', 'import-pulls' ) === 'true' ) {
@@ -252,9 +295,9 @@ class Revisr_Git_Callback {
 	 * @access public
 	 * @return boolean
 	 */
-	public function null_pull( $output = '', $args = '' ) {
+	public function null_pull( $output = array(), $args = '' ) {
 		$msg = __( 'There was an error pulling from the remote repository. The local repository could be ahead, or there may be an authentication issue.', 'revisr' );
-		Revisr_Admin::alert( $msg, true );
+		Revisr_Admin::alert( $msg, true, $output );
 		Revisr_Admin::log( __( 'Error pulling changes from the remote repository.', 'revisr' ), 'error' );
 		return false;
 	}
@@ -279,7 +322,7 @@ class Revisr_Git_Callback {
 	 */
 	public function null_push( $output = '', $args = '' ) {
 		$msg = __( 'Error pushing to the remote repository. The remote repository could be ahead, or there may be an authentication issue.', 'revisr' );
-		Revisr_Admin::alert( $msg, true );
+		Revisr_Admin::alert( $msg, true, $output );
 		Revisr_Admin::log( __( 'Error pushing changes to the remote repository.', 'revisr' ), 'error' );
 		return;
 	}
@@ -300,7 +343,7 @@ class Revisr_Git_Callback {
 	public function null_verify_remote( $output = '', $args = '' ) {
 		_e( 'Remote not found...', 'revisr' );
 		exit();
-	} 
+	}
 
 	/**
 	 * Returns the Git version.

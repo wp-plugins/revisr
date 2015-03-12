@@ -1,9 +1,9 @@
 <?php
 /**
  * class-revisr-commits.php
- * 
+ *
  * Configures the 'revisr_commits' custom post type.
- * 
+ *
  * @package   	Revisr
  * @license   	GPLv3
  * @link      	https://revisr.io
@@ -90,7 +90,7 @@ class Revisr_Commits {
 				add_meta_box( 'revisr_committed_files', __( 'Committed Files', 'revisr' ), array( $this, 'committed_files_meta' ), 'revisr_commits', 'normal', 'high' );
 				add_meta_box( 'revisr_view_commit', __( 'Commit Details', 'revisr' ), array( $this, 'view_commit_meta' ), 'revisr_commits', 'side', 'core' );
 				remove_meta_box( 'submitdiv', 'revisr_commits', 'side' );
-			}			
+			}
 		} else {
 			add_meta_box( 'revisr_pending_files', __( 'Stage Changes', 'revisr' ), array( $this, 'pending_files_meta' ), 'revisr_commits', 'normal', 'high' );
 			add_meta_box( 'revisr_add_tag', __( 'Add Tag', 'revisr' ), array( $this, 'add_tag_meta' ), 'revisr_commits', 'side', 'default' );
@@ -99,7 +99,7 @@ class Revisr_Commits {
 		}
 		remove_meta_box( 'authordiv', 'revisr_commits', 'normal' );
 	}
-	
+
 	/**
 	 * Custom title message for the revisr_commits custom post type.
 	 * @access public
@@ -114,7 +114,7 @@ class Revisr_Commits {
 
 	    return $input;
 	}
-	
+
 	/**
 	 * Custom messages for commits.
 	 * @access public
@@ -146,7 +146,7 @@ class Revisr_Commits {
 	/**
 	 * Custom bulk messages for Revisr.
 	 * @access public
-	 * @param  array $bulk_messages The messages to display. 
+	 * @param  array $bulk_messages The messages to display.
 	 * @param  array $bulk_counts   The number of those messages.
 	 */
 	public function bulk_messages( $bulk_messages, $bulk_counts ) {
@@ -166,7 +166,7 @@ class Revisr_Commits {
 	 * @param  array $actions The default array of actions.
 	 */
 	public function custom_actions( $actions ) {
-		
+
 		if ( 'revisr_commits' === get_post_type() && isset( $actions ) ) {
 
 			// Unset the default WordPress actions
@@ -234,7 +234,7 @@ class Revisr_Commits {
 			if ( $_GET['branch'] == 'all' ) {
 				$class = ' class="current"';
 			}
-			$views['all'] = sprintf( 
+			$views['all'] = sprintf(
 				__( '<a href="%s"%s>All Branches <span class="count">(%d)</span></a>', 'revisr' ),
 				admin_url( 'edit.php?post_type=revisr_commits&branch=all' ),
 				$class,
@@ -288,7 +288,7 @@ class Revisr_Commits {
 		$commit = Revisr_Admin::get_commit_details( $post_id );
 
 		switch ( $column_name ) {
-			case 'hash': 
+			case 'hash':
 				echo $commit['commit_hash'];
 				break;
 			case 'branch':
@@ -336,7 +336,7 @@ class Revisr_Commits {
 						<br>
 						<input id="unstage-all" type="button" class="button stage-nav-button" value="<?php _e( 'Unstage All', 'revisr' ); ?>" onclick="unstage_all()" />
 					</div>
-				</div><!-- /Staging -->		
+				</div><!-- /Staging -->
 				<br>
 				<!-- Unstaging -->
 				<div class="stage-container">
@@ -349,8 +349,8 @@ class Revisr_Commits {
 						<input id="stage-all" type="button" class="button stage-nav-button" value="<?php _e( 'Stage All', 'revisr' ); ?>" onclick="stage_all()" />
 					</div>
 				</div><!-- /Unstaging -->
-			<?php	
-		}	
+			<?php
+		}
 		exit();
 	}
 
@@ -367,21 +367,21 @@ class Revisr_Commits {
 				$output = maybe_unserialize( $file );
 			}
 		}
-		
-		echo '<div id="committed_files_result">';
+
+		echo '<div id="message"></div><div id="committed_files_result">';
 
 		if ( isset( $output ) ) {
 			printf( __('<br><strong>%s</strong> files were included in this commit. Double-click files marked as "Modified" to view the changes in a diff.', 'revisr' ), $commit['files_changed'] );
 			echo '<input id="commit_hash" name="commit_hash" value="' . $commit['commit_hash'] . '" type="hidden" />';
 			echo '<br><br><select id="committed" multiple="multiple" size="6">';
-				
+
 				// Display the files that were included in the commit.
 				foreach ( $output as $result ) {
 					$result 		= str_replace( '"', '', $result );
 					$short_status 	= substr( $result, 0, 3 );
 					$file 			= substr( $result, 2 );
 					$status 		= Revisr_Git::get_status( $short_status );
-					printf( '<option class="committed" value="%s">%s [%s]</option>', $result, $file, $status );	
+					printf( '<option class="committed" value="%s">%s [%s]</option>', $result, $file, $status );
 				}
 
 			echo '</select>';
@@ -460,16 +460,19 @@ class Revisr_Commits {
 	 */
 	public function view_commit_meta() {
 
-		$commit 			= Revisr_Admin::get_commit_details( get_the_ID() );
-		$revert_url 		= get_admin_url() . "admin-post.php?action=revert_form&commit_id=" . get_the_ID() . "&TB_iframe=true&width=350&height=200";
+		$post_id 			= get_the_ID();
+		$commit 			= Revisr_Admin::get_commit_details( $post_id );
+		$revert_url 		= get_admin_url() . "admin-post.php?action=revert_form&commit_id=" . $post_id . "&TB_iframe=true&width=350&height=200";
 
 		$time_format 	 	= __( 'M j, Y @ G:i' );
 		$timestamp 		 	= sprintf( __( 'Committed on: <strong>%s</strong>', 'revisr' ), date_i18n( $time_format, get_the_time( 'U' ) ) );
 
-		if ( $commit['committed_files'] && $commit['commit_hash'] ) {
-			$status = __( 'Committed', 'revisr' );
+		if ( false !== $commit['error_details'] ) {
+			$details = ' <a class="thickbox" title="' . __( 'Error Details', 'revisr' ) . '" href="' . wp_nonce_url( admin_url( 'admin-post.php?action=revisr_view_error&post_id=' . $post_id . '&TB_iframe=true&width=350&height=300' ), 'revisr_view_error', 'revisr_error_nonce' ) . '">View Details</a>';
+			$revert_btn = '<a class="button button-primary disabled" href="#">' . __( 'Revert to this Commit', 'revisr' ) . '</a>';
 		} else {
-			$status = __( 'Error', 'revisr' );
+			$revert_btn = '<a class="button button-primary thickbox" href="' . $revert_url . '" title="' . __( 'Revert', 'revisr' ) . '">' . __( 'Revert to this Commit', 'revisr' ) . '</a>';
+			$details = '';
 		}
 
 		?>
@@ -478,7 +481,7 @@ class Revisr_Commits {
 
 				<div class="misc-pub-section revisr-pub-status">
 					<label for="post_status"><?php _e( 'Status:', 'revisr' ); ?></label>
-					<span><strong><?php echo $status; ?></strong></span>
+					<span><strong><?php echo $commit['status'] . $details; ?></strong></span>
 				</div>
 
 				<div class="misc-pub-section revisr-pub-branch">
@@ -504,7 +507,7 @@ class Revisr_Commits {
 			<div id="delete-action"></div>
 			<div id="publishing-action">
 				<span class="spinner"></span>
-				<a class="button button-primary thickbox" href="<?php echo $revert_url; ?>" title="<?php _e( 'Revert', 'revisr' ); ?>"><?php _e( 'Revert to this Commit', 'revisr' ); ?></a>
+				<?php echo $revert_btn; ?>
 			</div>
 			<div class="clear"></div>
 		</div>
@@ -518,6 +521,6 @@ class Revisr_Commits {
 	public function pending_files_meta() {
 		echo "<div id='message'></div>
 		<div id='pending_files_result'></div>";
-	}	
-	
+	}
+
 }

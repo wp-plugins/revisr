@@ -46,17 +46,28 @@ location ~ path/to/your-repo/.git {
 
 This issue can be avoided entirely by using SSH to authenticate, which is recommended in most cases. If using SSH, you will need to generate a SSH key on the server and add it to the remote repository (Bitbucket and Github both support SSH).
 
-It is also adviseable to add Revisr to the gitignore file via the settings page to make sure that reverts don't rollback the plugins' functionality. 
+It is also adviseable to add Revisr to the gitignore file via the settings page to make sure that reverts don't rollback the plugins' functionality.
 
 ## Changelog ##
 
+#### 1.9.2 ####
+* Improved error handling for commits, pushes, and pulls
+* Fixed bug with saving Git username
+* Fixed CSS issue with viewing untracked tables after importing
+
+#### 1.9.1 ####
+* Fixed bug with "Import Pushes" checkbox not showing after saving
+* Fixed bug with saving some settings in Windows
+* Fixed CSS issue when viewing a branch with no commits
+* Small cleanup
+
 #### 1.9 ####
 * Added support for multiple commit authors
-* Added support for custom WordPress file structures
+* Added basic support for custom WordPress file structures
 * Added support for PHP autoloading when available
 * Added pagination to the "Recent Activity" table on the dashboard page
 * Added "Debug" page to the "Revisr Settings" page
-* Fixed bug with viewing diffs in Firefox 
+* Fixed bug with viewing diffs in Firefox
 * Fixed potential XSS and user escalation vulnerabilities, props @jdgrimes
 * General UI improvements
 * General performance improvements

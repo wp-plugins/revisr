@@ -13,9 +13,6 @@
 // Prevent direct access to this file.
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-// Prevent PHP notices from breaking AJAX.
-error_reporting( ~E_NOTICE );
-
 // Include WP_List_Table if it isn't already loaded.
 if ( ! class_exists( 'WP_List_Table' ) ) {
 	require_once( ABSPATH . '/wp-admin/includes/class-wp-list-table.php' );
@@ -34,6 +31,13 @@ class Revisr_List_Table extends WP_List_Table {
 	 * @access public
 	 */
 	public function __construct(){
+
+		// Prevent PHP notices from breaking AJAX.
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			error_reporting( ~E_NOTICE, ~E_STRICT );
+		}
+
+		// Grab the instance and load the parent class on the appropriate hook.
 		$this->revisr = Revisr::get_instance();
 		add_action( 'load-' . $this->revisr->admin->page_hooks['dashboard'], array( $this, 'load' ) );
 		add_action( 'wp_ajax_revisr_get_custom_list', array( $this, 'ajax_callback' ) );
@@ -135,7 +139,7 @@ class Revisr_List_Table extends WP_List_Table {
         $current_page 	= $this->get_pagenum();
         $total_items 	= count($data);
        	$data 			= array_slice($data,(($current_page-1)*$per_page),$per_page);
-        
+
         $this->items = $data;
         $this->set_pagination_args( array(
             'total_items' => $total_items,                  //WE have to calculate the total number of items
@@ -150,10 +154,10 @@ class Revisr_List_Table extends WP_List_Table {
 	 */
 	public function display() {
 		wp_nonce_field( 'revisr-list-nonce', 'revisr_list_nonce' );
-		
+
 		echo '<input type="hidden" id="order" name="order" value="' . $this->_pagination_args['order'] . '" />';
 		echo '<input type="hidden" id="orderby" name="orderby" value="' . $this->_pagination_args['orderby'] . '" />';
-		
+
 		parent::display();
 	}
 
@@ -164,44 +168,44 @@ class Revisr_List_Table extends WP_List_Table {
 	public function ajax_response() {
 		check_ajax_referer( 'revisr-list-nonce', 'revisr_list_nonce' );
 		$this->prepare_items();
-		
+
 		extract( $this->_args );
 		extract( $this->_pagination_args, EXTR_SKIP );
-		
+
 		ob_start();
 		if ( ! empty( $_REQUEST['no_placeholder'] ) ) {
 			$this->display_rows();
 		} else {
 			$this->display_rows_or_placeholder();
-		}	
+		}
 		$rows = ob_get_clean();
-		
+
 		ob_start();
 		$this->print_column_headers();
 		$headers = ob_get_clean();
-		
+
 		ob_start();
 		$this->pagination('top');
 		$pagination_top = ob_get_clean();
-		
+
 		ob_start();
 		$this->pagination('bottom');
 		$pagination_bottom = ob_get_clean();
-		
+
 		$response 							= array( 'rows' => $rows );
 		$response['pagination']['top'] 		= $pagination_top;
 		$response['pagination']['bottom'] 	= $pagination_bottom;
 		$response['column_headers'] 		= $headers;
-		
+
 		if ( isset( $total_items ) ) {
 			$response['total_items_i18n'] = sprintf( _n( '1 item', '%s items', $total_items ), number_format_i18n( $total_items ) );
 		}
-		
+
 		if ( isset( $total_pages ) ) {
 			$response['total_pages'] = $total_pages;
 			$response['total_pages_i18n'] = number_format_i18n( $total_pages );
 		}
-		
+
 		die( json_encode( $response ) );
 	}
 

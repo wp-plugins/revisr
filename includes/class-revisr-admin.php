@@ -48,21 +48,21 @@ class Revisr_Admin {
 	 * @param string $hook The page to enqueue the styles/scripts.
 	 */
 	public function revisr_scripts( $hook ) {
-		
+
 		// Register all CSS files used by Revisr.
 		wp_register_style( 'revisr_dashboard_css', REVISR_URL . 'assets/css/dashboard.css', array(), '02162015' );
 		wp_register_style( 'revisr_commits_css', REVISR_URL . 'assets/css/commits.css', array(), '02162015' );
 		wp_register_style( 'revisr_octicons_css', REVISR_URL . 'assets/octicons/octicons.css', array(), '02162015' );
-		
+
 		// Register all JS files used by Revisr.
 		wp_register_script( 'revisr_dashboard', REVISR_URL . 'assets/js/revisr-dashboard.js', 'jquery',  '02162015', true );
 		wp_register_script( 'revisr_staging', REVISR_URL . 'assets/js/revisr-staging.js', 'jquery', '02162015', false );
 		wp_register_script( 'revisr_committed', REVISR_URL . 'assets/js/revisr-committed.js', 'jquery', '02162015', false );
 		wp_register_script( 'revisr_settings', REVISR_URL . 'assets/js/revisr-settings.js', 'jquery', '02162015', true );
-		
+
 		// An array of pages that most scripts can be allowed on.
 		$allowed_pages = array( 'revisr', 'revisr_settings', 'revisr_branches' );
-		
+
 		// Enqueue common scripts and styles.
 		if ( isset( $_GET['page'] ) && in_array( $_GET['page'], $allowed_pages ) ) {
 
@@ -72,12 +72,12 @@ class Revisr_Admin {
 			wp_enqueue_script( 'revisr_settings' );
 			wp_enqueue_style( 'revisr_octicons_css' );
 
-		} 
+		}
 
 		// Enqueue scripts and styles for the 'revisr_commits' custom post type.
 		if ( 'revisr_commits' === get_post_type() ) {
 
-			if ( 'post-new.php' === $hook ) {
+			if ( 'post-new.php' === $hook  || 'post.php' === $hook ) {
 
 				// Enqueue scripts for the "New Commit" screen.
 				wp_enqueue_script( 'revisr_staging' );
@@ -90,16 +90,6 @@ class Revisr_Admin {
 					)
 				);
 
-			} elseif ( 'post.php' === $hook ) {
-
-				// Enqueue scripts for the "View Commit" screen.
-				wp_enqueue_script( 'revisr_committed' );
-				wp_localize_script( 'revisr_committed', 'committed_vars', array(
-					'post_id' 		=> $_GET['post'],
-					'ajax_nonce' 	=> wp_create_nonce( 'committed_nonce' ),
-					)
-				);
-
 			}
 
 			wp_enqueue_style( 'revisr_commits_css' );
@@ -107,10 +97,14 @@ class Revisr_Admin {
 			wp_enqueue_style( 'revisr_octicons_css' );
 			wp_enqueue_script( 'thickbox' );
 			wp_dequeue_script( 'autosave' );
+
+		} elseif ( isset( $_GET['post_type'] ) && 'revisr_commits' === $_GET['post_type'] ) {
+			// Necessary for when there are no commits found in a branch.
+			wp_enqueue_style( 'revisr_commits_css' );
 		}
 
 	}
-	
+
 	/**
 	 * Registers the menus used by Revisr.
 	 * @access public
@@ -130,7 +124,7 @@ class Revisr_Admin {
 	public function revisr_submenu_order( $menu_ord ) {
 		global $submenu;
 	    $arr = array();
-	    
+
 		if ( isset( $submenu['revisr'] ) ) {
 		    $arr[] = $submenu['revisr'][0];
 		    $arr[] = $submenu['revisr'][3];
@@ -144,12 +138,24 @@ class Revisr_Admin {
 	/**
 	 * Stores an alert to be rendered on the dashboard.
 	 * @access public
-	 * @param  string  $message 	The message to display.
-	 * @param  bool    $is_error Whether the message is an error.
+	 * @param  string  	$message 	The message to display.
+	 * @param  bool    	$is_error 	Whether the message is an error.
+	 * @param  array  	$output 	An array of output to store for viewing error details.
 	 */
-	public static function alert( $message, $is_error = false ) {
-		if ( $is_error == true ) {
+	public static function alert( $message, $is_error = false, $output = array() ) {
+		if ( true === $is_error ) {
+
+			if ( is_array( $output ) && ! empty( $output ) ) {
+				// Store info about the error for later.
+				set_transient( 'revisr_error_details', $output );
+
+				// Provide a link to view the error.
+				$error_url 	= wp_nonce_url( admin_url( 'admin-post.php?action=revisr_view_error&TB_iframe=true&width=350&height=300' ), 'revisr_view_error', 'revisr_error_nonce' );
+				$message 	.= sprintf( __( '<br>Click <a href="%s" class="thickbox" title="Error Details">here</a> for more details.', 'revisr' ), $error_url );
+			}
+
 			set_transient( 'revisr_error', $message, 10 );
+
 		} else {
 			set_transient( 'revisr_alert', $message, 3 );
 		}
@@ -170,7 +176,7 @@ class Revisr_Admin {
 				'meta'  => array( 'class' => 'revisr_commits' ),
 			);
 			$wp_admin_bar->add_node( $args );
-		} 
+		}
 	}
 
 	/**
@@ -193,6 +199,7 @@ class Revisr_Admin {
 	public static function clear_transients( $errors = true ) {
 		if ( $errors == true ) {
 			delete_transient( 'revisr_error' );
+			delete_transient( 'revisr_error_details' );
 		} else {
 			delete_transient( 'revisr_alert' );
 		}
@@ -215,6 +222,23 @@ class Revisr_Admin {
 	}
 
 	/**
+	 * Escapes a shell arguement.
+	 * @access public
+	 * @param  string $string The string to escape.
+	 * @return string $string The escaped string.
+	 */
+	public static function escapeshellarg( $string ) {
+		$os = Revisr_Compatibility::get_os();
+
+		if ( 'WIN' !== $os['code'] ) {
+			return escapeshellarg( $string );
+		} else {
+			// Windows-friendly workaround.
+			return '"' . str_replace( "'", "'\\''", $string ) . '"';
+		}
+	}
+
+	/**
 	 * Gets an array of details on a saved commit.
 	 * @access public
 	 * @param  string $id The WordPress Post ID associated with the commit.
@@ -230,6 +254,8 @@ class Revisr_Admin {
 		$files_changed 		= get_post_meta( $id, 'files_changed', true );
 		$committed_files 	= get_post_meta( $id, 'committed_files' );
 		$git_tag 			= get_post_meta( $id, 'git_tag', true );
+		$status 			= get_post_meta( $id, 'commit_status', true );
+		$error 				= get_post_meta( $id, 'error_details' );
 
 		// Store the values in an array.
 		$commit_details = array(
@@ -239,7 +265,9 @@ class Revisr_Admin {
 			'db_backup_method'	=> $db_backup_method ? $db_backup_method : '',
 			'files_changed' 	=> $files_changed ? $files_changed : 0,
 			'committed_files' 	=> $committed_files ? $committed_files : array(),
-			'tag'				=> $git_tag ? $git_tag : ''
+			'tag'				=> $git_tag ? $git_tag : '',
+			'status'			=> $status ? $status : '',
+			'error_details' 	=> $error ? $error : false
 		);
 
 		// Return the array.
@@ -249,8 +277,8 @@ class Revisr_Admin {
 	/**
 	 * Logs an event to the database.
 	 * @access public
-	 * @param  string $message The message to show in the Recent Activity. 
-	 * @param  string $event   Will be used for filtering later. 
+	 * @param  string $message The message to show in the Recent Activity.
+	 * @param  string $event   Will be used for filtering later.
 	 */
 	public static function log( $message, $event ) {
 		global $wpdb;
@@ -258,7 +286,7 @@ class Revisr_Admin {
 		$table = $wpdb->prefix . 'revisr';
 		$wpdb->insert(
 			"$table",
-			array( 
+			array(
 				'time' 		=> $time,
 				'message'	=> $message,
 				'event' 	=> $event,
@@ -268,7 +296,7 @@ class Revisr_Admin {
 				'%s',
 				'%s',
 			)
-		);		
+		);
 	}
 
 	/**
@@ -291,7 +319,7 @@ class Revisr_Admin {
 	}
 
 	/**
-	 * Renders an alert and removes the old data. 
+	 * Renders an alert and removes the old data.
 	 * @access public
 	 */
 	public function render_alert() {
@@ -341,7 +369,7 @@ class Revisr_Admin {
 						echo '<span class="diff_removed" style="background-color:#fdd;">' . htmlspecialchars( $line ) . '</span><br>';
 					} else {
 						echo htmlspecialchars( $line ) . '<br>';
-					}	
+					}
 				}
 
 			} else {
@@ -352,6 +380,31 @@ class Revisr_Admin {
 		</html>
 		<?php
 		exit();
+	}
+
+	/**
+	 * Processes a view error request.
+	 * @access public
+	 */
+	public function view_error() {
+		?>
+		<html>
+		<head>
+		<title><?php _e( 'Error Details', 'revisr' ); ?></title>
+		</head>
+		<body>
+			<?php
+				if ( isset( $_REQUEST['post_id'] ) && get_post_meta( $_REQUEST['post_id'], 'error_details', true ) ) {
+					echo implode( '<br>', get_post_meta( $_REQUEST['post_id'], 'error_details', true ) );
+				} elseif ( $revisr_error = get_transient( 'revisr_error_details' ) ) {
+					echo implode( '<br>', $revisr_error );
+				} else {
+					_e( 'Detailed error information not available.', 'revisr' );
+				}
+			?>
+		</body>
+		</html>
+		<?php
 	}
 
 	/**

@@ -11,7 +11,7 @@
 // Disallow direct access.
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-// Grab the instance 
+// Grab the instance
 $revisr 	= Revisr::get_instance();
 $loader_url = REVISR_URL . 'assets/img/loader.gif';
 
@@ -84,22 +84,19 @@ $revisr->list_table->prepare_items();
 													else {
 														echo "<tr><td>$branch</td><td width='70'><a class='button branch-btn' href='" . get_admin_url() . "admin-post.php?action=process_checkout&branch={$branch}'>Checkout</a></td></tr>";
 													}
-												}										
+												}
 											}
 										?>
 									</table>
 								</div>
 								<div id="tags" class="tabs-panel" style="display: none;">
-									<ul id="tags-list">
-										<?php
-											$tags = $revisr->git->run( 'tag', array() );
-											if ( is_array( $tags ) ) {
-												foreach ( $tags as $tag ) {
-													echo "<li>$tag</li>";
-												}
-											}
-										?>
-									</ul>
+								<?php
+									// TODO: Link these back as a filter on the "Commits" page.
+									$tags = $revisr->git->run( 'tag', array() );
+									if ( is_array( $tags ) ) {
+										echo '<ul id="tags-list"><li>' . implode( '</li><li>', $tags ) . '</ul>';
+									}
+								?>
 								</div>
 								<div id="manage_branches" class="wp-hidden-children">
 									<h4><a id="manage-branches-link" href="<?php echo get_admin_url() . 'admin.php?page=revisr_branches'; ?>" class="hide-if-no-js"><?php _e( 'Manage Branches', 'revisr' ); ?></a></h4>
@@ -115,8 +112,8 @@ $revisr->list_table->prepare_items();
 							<br><br>
 							<?php printf( __( '&copy; %d Expanded Fronts, LLC', 'revisr' ), date( 'Y' ) ); ?>
 						</div> <!-- .inside -->
-					</div> <!-- .postbox -->				
-				</div> <!-- .meta-box-sortables -->		
+					</div> <!-- .postbox -->
+				</div> <!-- .meta-box-sortables -->
 			</div> <!-- #postbox-container-1 .postbox-container -->
 		</div> <!-- #post-body .metabox-holder .columns-2 -->
 		<br class="clear">
