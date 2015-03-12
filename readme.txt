@@ -79,6 +79,13 @@ Care should be taken when dealing with upgrades that depend on the database. Tak
 
 == Changelog ==
 
+= 1.9.2 =
+* Improved error handling for commits, pushes, and pulls
+* Fixed bug with saving Git username
+* Fixed bug with PHP error reporting
+* Fixed bug with push count when backing up DB and pushing at the same time
+* Fixed CSS issue with viewing untracked tables after importing
+
 = 1.9.1 =
 * Fixed bug with "Import Pushes" checkbox not showing after saving
 * Fixed bug with saving some settings in Windows

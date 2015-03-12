@@ -77,7 +77,7 @@ class Revisr_Admin {
 		// Enqueue scripts and styles for the 'revisr_commits' custom post type.
 		if ( 'revisr_commits' === get_post_type() ) {
 
-			if ( 'post-new.php' === $hook ) {
+			if ( 'post-new.php' === $hook  || 'post.php' === $hook ) {
 
 				// Enqueue scripts for the "New Commit" screen.
 				wp_enqueue_script( 'revisr_staging' );
@@ -87,16 +87,6 @@ class Revisr_Admin {
 					'empty_commit_msg' 	=> __( 'Nothing was added to the commit. Please use the section below to add files to use in the commit.', 'revisr' ),
 					'error_commit_msg' 	=> __( 'There was an error committing the files. Make sure that your Git username and email is set, and that Revisr has write permissions to the ".git" directory.', 'revisr' ),
 					'view_diff' 		=> __( 'View Diff', 'revisr' ),
-					)
-				);
-
-			} elseif ( 'post.php' === $hook ) {
-
-				// Enqueue scripts for the "View Commit" screen.
-				wp_enqueue_script( 'revisr_committed' );
-				wp_localize_script( 'revisr_committed', 'committed_vars', array(
-					'post_id' 		=> $_GET['post'],
-					'ajax_nonce' 	=> wp_create_nonce( 'committed_nonce' ),
 					)
 				);
 
@@ -148,12 +138,24 @@ class Revisr_Admin {
 	/**
 	 * Stores an alert to be rendered on the dashboard.
 	 * @access public
-	 * @param  string  $message 	The message to display.
-	 * @param  bool    $is_error Whether the message is an error.
+	 * @param  string  	$message 	The message to display.
+	 * @param  bool    	$is_error 	Whether the message is an error.
+	 * @param  array  	$output 	An array of output to store for viewing error details.
 	 */
-	public static function alert( $message, $is_error = false ) {
-		if ( $is_error == true ) {
+	public static function alert( $message, $is_error = false, $output = array() ) {
+		if ( true === $is_error ) {
+
+			if ( is_array( $output ) && ! empty( $output ) ) {
+				// Store info about the error for later.
+				set_transient( 'revisr_error_details', $output );
+
+				// Provide a link to view the error.
+				$error_url 	= wp_nonce_url( admin_url( 'admin-post.php?action=revisr_view_error&TB_iframe=true&width=350&height=300' ), 'revisr_view_error', 'revisr_error_nonce' );
+				$message 	.= sprintf( __( '<br>Click <a href="%s" class="thickbox" title="Error Details">here</a> for more details.', 'revisr' ), $error_url );
+			}
+
 			set_transient( 'revisr_error', $message, 10 );
+
 		} else {
 			set_transient( 'revisr_alert', $message, 3 );
 		}
@@ -197,6 +199,7 @@ class Revisr_Admin {
 	public static function clear_transients( $errors = true ) {
 		if ( $errors == true ) {
 			delete_transient( 'revisr_error' );
+			delete_transient( 'revisr_error_details' );
 		} else {
 			delete_transient( 'revisr_alert' );
 		}
@@ -251,6 +254,8 @@ class Revisr_Admin {
 		$files_changed 		= get_post_meta( $id, 'files_changed', true );
 		$committed_files 	= get_post_meta( $id, 'committed_files' );
 		$git_tag 			= get_post_meta( $id, 'git_tag', true );
+		$status 			= get_post_meta( $id, 'commit_status', true );
+		$error 				= get_post_meta( $id, 'error_details' );
 
 		// Store the values in an array.
 		$commit_details = array(
@@ -260,7 +265,9 @@ class Revisr_Admin {
 			'db_backup_method'	=> $db_backup_method ? $db_backup_method : '',
 			'files_changed' 	=> $files_changed ? $files_changed : 0,
 			'committed_files' 	=> $committed_files ? $committed_files : array(),
-			'tag'				=> $git_tag ? $git_tag : ''
+			'tag'				=> $git_tag ? $git_tag : '',
+			'status'			=> $status ? $status : '',
+			'error_details' 	=> $error ? $error : false
 		);
 
 		// Return the array.
@@ -373,6 +380,31 @@ class Revisr_Admin {
 		</html>
 		<?php
 		exit();
+	}
+
+	/**
+	 * Processes a view error request.
+	 * @access public
+	 */
+	public function view_error() {
+		?>
+		<html>
+		<head>
+		<title><?php _e( 'Error Details', 'revisr' ); ?></title>
+		</head>
+		<body>
+			<?php
+				if ( isset( $_REQUEST['post_id'] ) && get_post_meta( $_REQUEST['post_id'], 'error_details', true ) ) {
+					echo implode( '<br>', get_post_meta( $_REQUEST['post_id'], 'error_details', true ) );
+				} elseif ( $revisr_error = get_transient( 'revisr_error_details' ) ) {
+					echo implode( '<br>', $revisr_error );
+				} else {
+					_e( 'Detailed error information not available.', 'revisr' );
+				}
+			?>
+		</body>
+		</html>
+		<?php
 	}
 
 	/**

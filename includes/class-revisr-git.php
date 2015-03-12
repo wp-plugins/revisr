@@ -101,7 +101,7 @@ class Revisr_Git {
 
 		// Run the command.
 		chdir( $this->git_dir );
-		exec( "$safe_path $safe_cmd $safe_args", $output, $error );
+		exec( "$safe_path $safe_cmd $safe_args 2>&1", $output, $return_code );
 		chdir( $this->current_dir );
 
 		// Process the response.
@@ -109,8 +109,8 @@ class Revisr_Git {
 		$success_callback 	= 'success_' . $callback;
 		$failure_callback 	= 'null_' . $callback;
 
-		if ( $error ) {
-			return $response->$failure_callback( $error, $info );
+		if ( 0 !== $return_code ) {
+			return $response->$failure_callback( $output, $info );
 		} else {
 			return $response->$success_callback( $output, $info );
 		}
@@ -417,10 +417,11 @@ class Revisr_Git {
 	/**
 	 * Pulls changes from the remote repository.
 	 * @access public
+	 * @param  array $commits The commits we're pulling (used in callback).
 	 */
-	public function pull() {
+	public function pull( $commits = array() ) {
 		$this->reset();
-		$pull = $this->run( 'pull', array( '-Xtheirs', '--quiet', $this->remote, $this->branch ), __FUNCTION__, $this->count_unpulled( false ) );
+		$pull = $this->run( 'pull', array( '-Xtheirs', '--quiet', $this->remote, $this->branch ), __FUNCTION__, $commits );
 		return $pull;
 	}
 

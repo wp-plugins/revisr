@@ -13,13 +13,12 @@
 // Prevent direct access to this file.
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-// Prevent PHP notices from breaking AJAX.
-error_reporting( ~E_NOTICE );
-
 // Include WP_List_Table if it isn't already loaded.
 if ( ! class_exists( 'WP_List_Table' ) ) {
 	require_once( ABSPATH . '/wp-admin/includes/class-wp-list-table.php' );
 }
+
+
 
 class Revisr_List_Table extends WP_List_Table {
 
@@ -34,8 +33,16 @@ class Revisr_List_Table extends WP_List_Table {
 	 * @access public
 	 */
 	public function __construct(){
+
+		// Prevent PHP notices from breaking AJAX.
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			error_reporting( ~E_NOTICE & ~E_STRICT );
+		}
+
+		// Grab the instance and load the parent class on the appropriate hook.
 		$this->revisr = Revisr::get_instance();
-		add_action( 'load-' . $this->revisr->admin->page_hooks['dashboard'], array( $this, 'load' ) );
+
+		add_action( 'load-toplevel_page_revisr', array( $this, 'load' ) );
 		add_action( 'wp_ajax_revisr_get_custom_list', array( $this, 'ajax_callback' ) );
 	}
 
@@ -138,9 +145,11 @@ class Revisr_List_Table extends WP_List_Table {
 
         $this->items = $data;
         $this->set_pagination_args( array(
-            'total_items' => $total_items,                  //WE have to calculate the total number of items
-            'per_page'    => $per_page,                     //WE have to determine how many items to show on a page
-            'total_pages' => ceil($total_items/$per_page)   //WE have to calculate the total number of pages
+            'total_items' 	=> $total_items,
+            'per_page'    	=> $per_page,
+            'total_pages' 	=> ceil($total_items/$per_page),
+            'orderby'		=> ! empty( $_REQUEST['orderby'] ) && '' != $_REQUEST['orderby'] ? $_REQUEST['orderby'] : 'time',
+            'order'			=> ! empty( $_REQUEST['order'] ) && '' != $_REQUEST['order'] ? $_REQUEST['order'] : 'desc'
         ) );
 	}
 

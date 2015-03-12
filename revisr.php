@@ -8,7 +8,7 @@
  * Plugin Name:       Revisr
  * Plugin URI:        http://revisr.io/
  * Description:       A plugin that allows users to manage WordPress websites with Git repositories.
- * Version:           1.9.1
+ * Version:           1.9.2
  * Author:            Expanded Fronts, LLC
  * Author URI:        http://expandedfronts.com/
  * License:           GPL-3.0+
@@ -129,8 +129,8 @@ class Revisr {
 	 */
 	public static function get_instance() {
 		if ( null == self::$instance ) {
-			self::$instance 				= new self;
-			self::$instance->options 		= self::$instance->get_options();
+			self::$instance 			= new self;
+			self::$instance->options 	= self::$instance->get_options();
 
 			self::$instance->define_constants();
 
@@ -152,7 +152,7 @@ class Revisr {
 	}
 
 	/**
-	 * Callback for spt_autoload_register.
+	 * Callback for spl_autoload_register.
 	 * @access private
 	 * @param  string $class The class to load.
 	 * @since  1.9
@@ -200,7 +200,7 @@ class Revisr {
 		// The URL of the plugin base directory.
 		define( 'REVISR_URL', plugin_dir_url( REVISR_FILE ) );
 		// The current version of the plugin.
-		define( 'REVISR_VERSION', '1.9' );
+		define( 'REVISR_VERSION', '1.9.2' );
 	}
 
 	/**
@@ -273,6 +273,7 @@ class Revisr {
 		add_action( 'admin_post_import_tables_form', array( self::$instance->admin, 'import_tables_form' ) );
 		add_action( 'admin_post_revert_form', array( self::$instance->admin, 'revert_form' ) );
 		add_action( 'admin_post_revisr_view_status', array( self::$instance->admin, 'view_status' ) );
+		add_action( 'admin_post_revisr_view_error', array( self::$instance->admin, 'view_error' ) );
 
 		// Displays the "Sponsored by Site5" logo.
 		add_action( 'admin_notices', array( self::$instance->admin, 'site5_notice' ) );
