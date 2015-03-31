@@ -10,7 +10,7 @@
  * @copyright 	Expanded Fronts, LLC
  */
 
-// Disallow direct access.
+// Prevent direct access.
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 class Revisr_Settings {
@@ -157,6 +157,13 @@ class Revisr_Settings {
 			'development_url',
 			__( 'Development URL', 'revisr'),
 			array( $this->settings_fields, 'development_url_callback' ),
+			'revisr_database_settings',
+			'revisr_database_settings'
+		);
+		add_settings_field(
+			'db_driver',
+			__( 'Database Driver', 'revisr' ),
+			array( $this->settings_fields, 'db_driver_callback' ),
 			'revisr_database_settings',
 			'revisr_database_settings'
 		);

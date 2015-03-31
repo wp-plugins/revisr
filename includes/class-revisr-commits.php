@@ -10,7 +10,7 @@
  * @copyright 	Expanded Fronts, LLC
  */
 
-// Disallow direct access.
+// Prevent direct access.
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 class Revisr_Commits {
@@ -98,6 +98,25 @@ class Revisr_Commits {
 			remove_meta_box( 'submitdiv', 'revisr_commits', 'side' );
 		}
 		remove_meta_box( 'authordiv', 'revisr_commits', 'normal' );
+	}
+
+	/**
+	 * Registers all postmeta keys used and assigns the default
+	 * method used for escaping when using add_post_meta or edit_post_meta
+	 * @access public
+	 */
+	public function register_meta_keys() {
+		register_meta( 'post', 'files_changed', 'absint' );
+		register_meta( 'post', 'branch', 'wp_kses' );
+		register_meta( 'post', 'commit_hash', 'wp_kses' );
+		register_meta( 'post', 'db_hash', 'wp_kses' );
+		register_meta( 'post', 'committed_files', function( $input ) {
+			return array_map( 'esc_attr', $input );
+		} );
+		register_meta( 'post', 'git_tag', 'esc_attr' );
+		register_meta( 'post', 'backup_method', 'esc_attr' );
+		register_meta( 'post', 'commit_status', 'esc_attr' );
+		register_meta( 'post', 'error_details', 'esc_textarea' );
 	}
 
 	/**
@@ -446,6 +465,7 @@ class Revisr_Commits {
 			<div id="delete-action"></div>
 			<div id="publishing-action">
 				<span class="spinner"></span>
+				<?php wp_nonce_field( 'process_commit', 'revisr_commit_nonce' ); ?>
 				<input type="submit" name="publish" id="commit" class="button button-primary button-large" value="<?php _e( 'Commit Changes', 'revisr' ); ?>" onclick="commit_files();" accesskey="p">
 			</div>
 			<div class="clear"></div>

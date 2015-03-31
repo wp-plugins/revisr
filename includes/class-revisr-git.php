@@ -10,7 +10,7 @@
  * @copyright 	Expanded Fronts, LLC
  */
 
-// Disallow direct access.
+// Prevent direct access.
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 // The main Git class.
@@ -94,6 +94,7 @@ class Revisr_Git {
 	 * @param 	string|array 	$info 		Additional info to pass to the callback
 	 */
 	public function run( $command, $args, $callback = '', $info = '' ) {
+
 		// Setup the command for safe usage.
 		$safe_path 		= Revisr_Admin::escapeshellarg( $this->git_path );
 		$safe_cmd 		= Revisr_Admin::escapeshellarg( $command );
@@ -109,6 +110,7 @@ class Revisr_Git {
 		$success_callback 	= 'success_' . $callback;
 		$failure_callback 	= 'null_' . $callback;
 
+		// Return the callback.
 		if ( 0 !== $return_code ) {
 			return $response->$failure_callback( $output, $info );
 		} else {
@@ -164,10 +166,13 @@ class Revisr_Git {
 	 * @access public
 	 */
 	public function auto_push() {
+
+		// Allow for preventing auto-push on a per-commit basis.
 		if ( isset( $_REQUEST['autopush_enabled'] ) && ! isset( $_REQUEST['auto_push'] ) ) {
 			return;
 		}
 
+		// Push the changes if needed.
 		if ( $this->get_config( 'revisr', 'auto-push' ) === 'true' || isset( $_REQUEST['auto_push'] ) ) {
 			$this->push();
 		}
@@ -244,7 +249,7 @@ class Revisr_Git {
 		if ( $ajax_btn == true ) {
 			$this->run( 'log', array( $this->branch . '..' . $this->remote . '/' . $this->branch, '--pretty=oneline' ), 'count_ajax_btn' );
 		} else {
-			$unpulled = $this->run( 'log', array( $this->branch . '..' . $this->remote . '/' . $this->branch, '--pretty=oneline') );
+			$unpulled = $this->run( 'log', array( $this->branch . '..' . $this->remote . '/' . $this->branch, '--pretty=oneline' ) );
 			return count( $unpulled );
 		}
 	}
@@ -507,6 +512,40 @@ class Revisr_Git {
 	public function tag( $tag = '' ) {
 		$tag = $this->run( 'tag', array( $tag ) );
 		return $tag;
+	}
+
+	/**
+	 * Updates the .gitignore file, and removes files from version control,
+	 * making sure to keep the physical copies of the files on the server.
+	 * @access public
+	 */
+	public function update_gitignore() {
+		// Store the content in the .gitignore.
+		file_put_contents( $this->git_dir . '/.gitignore', $this->options['gitignore'] );
+
+		// Add the .gitignore.
+		$this->run( 'add', array( '.gitignore' ) );
+
+		// Convert the .gitignore into an array we can work with.
+		$files = explode( PHP_EOL, $this->options['gitignore'] );
+
+		foreach ( $files as $file ) {
+			if ( '' == $file || '!' === $file[0] ) {
+				// Don't do anything.
+				continue;
+			} else {
+				/**
+				 * Remove the cached version of the file,
+				 * leaving it intact in the working directory.
+				 */
+				$this->run( 'rm', array( '--cached', $file ) );
+			}
+		}
+
+		// Commit the updates.
+		$commit_msg = __( 'Updated .gitignore.', 'revisr' );
+		$this->run('commit', array( '-m', $commit_msg ) );
+		$this->auto_push();
 	}
 
 	/**
