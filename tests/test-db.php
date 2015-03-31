@@ -31,15 +31,6 @@ class RevisrDBTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Tests the build_connection() function.
-	 */
-	function test_build_connection() {
-		$conn = $this->revisr->db->build_conn();
-		$this->assertNotEquals( null, $conn );
-		$this->assertContains( '--host', $conn );
-	}
-
-	/**
 	 * Tests the setup_env() method.
 	 */
 	function test_setup_env() {
@@ -70,16 +61,9 @@ class RevisrDBTest extends WP_UnitTestCase {
 	 * Tests a database backup.
 	 */
 	function test_backup() {
+		$this->revisr->git->set_config( 'revisr', 'db-tracking', 'all_tables' );
 		$this->revisr->db->backup();
 		$this->assertFileExists( ABSPATH . 'wp-content/uploads/revisr-backups/revisr_wptests_posts.sql' );
-	}
-
-	/**
-	 * Tests a database import.
-	 */
-	function test_import() {
-		$import = $this->revisr->db->import_table( 'wptests_users' );
-		$this->assertEquals( true, $import );
 	}
 
 	/**

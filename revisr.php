@@ -8,7 +8,7 @@
  * Plugin Name:       Revisr
  * Plugin URI:        http://revisr.io/
  * Description:       A plugin that allows users to manage WordPress websites with Git repositories.
- * Version:           1.9.2
+ * Version:           1.9.3
  * Author:            Expanded Fronts, LLC
  * Author URI:        http://expandedfronts.com/
  * License:           GPL-3.0+
@@ -174,6 +174,8 @@ class Revisr {
 		require_once REVISR_PATH . 'includes/class-revisr-admin.php';
 		require_once REVISR_PATH . 'includes/class-revisr-remote.php';
 		require_once REVISR_PATH . 'includes/class-revisr-db.php';
+		require_once REVISR_PATH . 'includes/class-revisr-db-backup.php';
+		require_once REVISR_PATH . 'includes/class-revisr-db-import.php';
 		require_once REVISR_PATH . 'includes/class-revisr-git-callback.php';
 		require_once REVISR_PATH . 'includes/class-revisr-cron.php';
 
@@ -200,7 +202,7 @@ class Revisr {
 		// The URL of the plugin base directory.
 		define( 'REVISR_URL', plugin_dir_url( REVISR_FILE ) );
 		// The current version of the plugin.
-		define( 'REVISR_VERSION', '1.9.2' );
+		define( 'REVISR_VERSION', '1.9.3' );
 	}
 
 	/**
@@ -240,6 +242,7 @@ class Revisr {
 
 		// Create and configure the "revisr_commits" custom post type.
 		add_action( 'init', array( self::$instance->commits, 'post_types' ) );
+		add_action( 'init', array( self::$instance->commits, 'register_meta_keys' ) );
 		add_action( 'pre_get_posts', array( self::$instance->commits, 'filters' ) );
 		add_action( 'views_edit-revisr_commits', array( self::$instance->commits, 'custom_views' ) );
 		add_action( 'load-edit.php', array( self::$instance->commits, 'default_views' ) );
@@ -380,4 +383,3 @@ register_activation_hook( __FILE__, array( 'Revisr', 'revisr_install' ) );
 
 // Adds the settings link to the plugins page.
 add_filter( 'plugin_action_links_'  . plugin_basename( __FILE__ ), array( 'Revisr', 'settings_link' ) );
-
