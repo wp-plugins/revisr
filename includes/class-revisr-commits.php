@@ -26,7 +26,7 @@ class Revisr_Commits {
 	 * @access public
 	 */
 	public function __construct() {
-		$this->revisr = Revisr::get_instance();
+		$this->revisr = revisr();
 	}
 
 	/**
@@ -114,7 +114,7 @@ class Revisr_Commits {
 		register_meta( 'post', 'git_tag', 'esc_attr' );
 		register_meta( 'post', 'backup_method', 'esc_attr' );
 		register_meta( 'post', 'commit_status', 'esc_attr' );
-		register_meta( 'post', 'error_details', 'esc_textarea' );
+		register_meta( 'post', 'error_details', array( 'Revisr_Admin', 'esc_attr_array' ) );
 	}
 
 	/**
@@ -213,19 +213,46 @@ class Revisr_Commits {
 	}
 
 	/**
-	 * Filters commits by branch.
+	 * Filters for edit.php.
 	 * @access public
 	 * @param  object $commits The commits query.
 	 */
 	public function filters( $commits ) {
-		if ( isset( $_GET['post_type'] ) && $_GET['post_type'] == 'revisr_commits' ) {
+		if ( isset( $commits->query_vars['post_type'] ) && 'revisr_commits' === $commits->query_vars['post_type'] ) {
+
+			// Filter by tag.
+			if ( isset( $_GET['git_tag'] ) && '' !== $_GET['git_tag'] ) {
+				$commits->set( 'meta_key', 'git_tag' );
+				$commits->set( 'meta_value', esc_sql( $_GET['git_tag'] ) );
+
+				// Bail out early so the filter isn't potentially overwritten.
+				return $commits;
+			}
+
+			// Filter by branch.
 			if ( isset( $_GET['branch'] ) && $_GET['branch'] != 'all' ) {
 				$commits->set( 'meta_key', 'branch' );
-				$commits->set( 'meta_value', $_GET['branch'] );
-				$commits->set( 'post_type', 'revisr_commits' );
+				$commits->set( 'meta_value', esc_sql( $_GET['branch'] ) );
 			}
 		}
 		return $commits;
+	}
+
+	/**
+	 * Allows for searching by the 7 digit commit hash on edit.php.
+	 * @access public
+	 * @param  string $where The WordPress "WHERE" queries being ran.
+	 * @return string
+	 */
+	public function posts_where( $where ) {
+		global $pagenow, $wpdb;
+		if ( 'edit.php' === $pagenow && isset( $_GET['post_type'] ) && 'revisr_commits' === $_GET['post_type'] ) {
+			if ( isset( $_GET['s'] ) && 7 === strlen( trim( $_GET['s'] ) ) ) {
+				$hash 	= esc_sql( $_GET['s'] );
+				$where .= " OR $wpdb->postmeta.meta_key = 'commit_hash'  AND $wpdb->postmeta.meta_value = '$hash'";
+			}
+		}
+		return $where;
 	}
 
 	/**

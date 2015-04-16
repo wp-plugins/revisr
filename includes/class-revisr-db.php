@@ -24,12 +24,6 @@ class Revisr_DB {
 	protected $revisr;
 
 	/**
-	 * An array of user options and preferences.
-	 * @var array
-	 */
-	protected $options;
-
-	/**
 	 * The backup directory.
 	 * @var string
 	 */
@@ -51,9 +45,7 @@ class Revisr_DB {
 		global $wpdb;
 		$this->wpdb = $wpdb;
 
-		// Grab the instance of Revisr.
-		$this->revisr 	= Revisr::get_instance();
-		$this->options 	= Revisr::get_options();
+		$this->revisr = revisr();
 
 		$upload_dir = wp_upload_dir();
 
@@ -139,6 +131,23 @@ class Revisr_DB {
 	}
 
 	/**
+	 * Returns an array containing the size of each database table.
+	 * @access public
+	 * @return array
+	 */
+	public function get_sizes() {
+		$sizes 	= array();
+		$tables = $this->wpdb->get_results( 'SHOW TABLE STATUS', ARRAY_A );
+
+		foreach ( $tables as $table ) {
+			$size = round( $table['Data_length'] / 1024 / 1024, 2 );
+			$sizes[$table['Name']] = sprintf( __( '(%s MB)', 'revisr' ), $size );
+		}
+
+		return $sizes;
+	}
+
+	/**
 	 * Returns a list of tables that are in the "revisr-backups" directory,
 	 * but not in the database. Necessary for importing tables that could
 	 * not be added to the tracked tables due to them not existing.
@@ -170,7 +179,7 @@ class Revisr_DB {
 	 */
 	public function get_tracked_tables() {
 		$stored_tables = $this->revisr->git->run( 'config', array( '--get-all', 'revisr.tracked-tables' ) );
-		if ( isset( $this->options['db_tracking'] ) && $this->options['db_tracking'] == 'all_tables' ) {
+		if ( isset( $this->revisr->options['db_tracking'] ) && $this->revisr->options['db_tracking'] == 'all_tables' ) {
 			$tracked_tables = $this->get_tables();
 		} elseif ( is_array( $stored_tables ) ) {
 			$tracked_tables = array_intersect( $stored_tables, $this->get_tables() );
@@ -448,7 +457,7 @@ class Revisr_DB {
 
 			if ( ! empty( $new_tables ) ) {
 				// If there are new tables that were imported.
-				if ( isset( $this->options['db_tracking'] ) && $this->options['db_tracking'] == 'all_tables' ) {
+				if ( isset( $this->revisr->options['db_tracking'] ) && $this->revisr->options['db_tracking'] == 'all_tables' ) {
 					// If the user is tracking all tables, import all tables.
 					$import = $this->run( 'import', $all_tables, $replace_url );
 				} else {

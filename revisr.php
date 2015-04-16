@@ -8,7 +8,7 @@
  * Plugin Name:       Revisr
  * Plugin URI:        http://revisr.io/
  * Description:       A plugin that allows users to manage WordPress websites with Git repositories.
- * Version:           1.9.4
+ * Version:           1.9.5
  * Author:            Expanded Fronts, LLC
  * Author URI:        http://expandedfronts.com/
  * License:           GPL-3.0+
@@ -35,12 +35,12 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * The main Revisr class. Initializes the plugin loads any
+ * The main Revisr class. Initializes the plugin and loads any
  * required hooks and dependencies.
  *
  * @since 1.8.2
  */
-class Revisr {
+final class Revisr {
 
 	/**
 	 * Stores the current instance of Revisr.
@@ -97,7 +97,7 @@ class Revisr {
 	public $options;
 
 	/**
-	 * Empty construct, use get_instance() instead.
+	 * Empty construct, use revisr() instead.
 	 * @access private
 	 */
 	private function __construct() {
@@ -128,27 +128,48 @@ class Revisr {
 	 * @return object
 	 */
 	public static function get_instance() {
+
 		if ( null == self::$instance ) {
+
+			// Create the instance.
 			self::$instance 			= new self;
 			self::$instance->options 	= self::$instance->get_options();
 
+			// Define constants used by the plugin.
 			self::$instance->define_constants();
 
-			// Try to autoload the classes.
-			if ( function_exists( 'spl_autoload_register' ) ) {
-				spl_autoload_register( array( __CLASS__, 'autoload' ) );
-			} else {
-				self::$instance->load_dependencies();
-			}
+			// Load the rest of the plugin.
+			add_action( 'plugins_loaded', array( __CLASS__, 'load_instance' ) );
 
-			self::$instance->set_locale();
-			self::$instance->load_public_hooks();
-
-			if ( current_user_can( 'install_plugins' ) && is_admin() ) {
-				self::$instance->load_admin_hooks();
-			}
 		}
+
 		return self::$instance;
+	}
+
+	/**
+	 * Loads dependencies and initiates action hooks.
+	 * @access public
+	 */
+	public static function load_instance() {
+
+		// Load the classes via autoloader if available.
+		if ( function_exists( 'spl_autoload_register' ) ) {
+			spl_autoload_register( array( __CLASS__, 'autoload' ) );
+		} else {
+			self::$instance->load_dependencies();
+		}
+
+		// Set the locale.
+		self::$instance->set_locale();
+
+		// Load any public-facing hooks.
+		self::$instance->load_public_hooks();
+
+		// Load any admin-side hooks.
+		if ( current_user_can( 'install_plugins' ) && is_admin() ) {
+			self::$instance->load_admin_hooks();
+		}
+
 	}
 
 	/**
@@ -202,7 +223,7 @@ class Revisr {
 		// The URL of the plugin base directory.
 		define( 'REVISR_URL', plugin_dir_url( REVISR_FILE ) );
 		// The current version of the plugin.
-		define( 'REVISR_VERSION', '1.9.4' );
+		define( 'REVISR_VERSION', '1.9.5' );
 	}
 
 	/**
@@ -240,6 +261,9 @@ class Revisr {
 		self::$instance->settings 		= new Revisr_Settings();
 		self::$instance->list_table 	= new Revisr_List_Table();
 
+		// Register the plugin settings link.
+		add_filter( 'plugin_action_links_'  . plugin_basename( __FILE__ ), array( __CLASS__, 'settings_link' ) );
+
 		// Create and configure the "revisr_commits" custom post type.
 		add_action( 'init', array( self::$instance->commits, 'post_types' ) );
 		add_action( 'init', array( self::$instance->commits, 'register_meta_keys' ) );
@@ -255,6 +279,7 @@ class Revisr {
 		add_action( 'load-post.php', array( self::$instance->commits, 'post_meta' ) );
 		add_action( 'load-post-new.php', array( self::$instance->commits, 'post_meta' ) );
 		add_filter( 'enter_title_here', array( self::$instance->commits, 'custom_enter_title' ) );
+		add_filter( 'posts_where', array( self::$instance->commits, 'posts_where' ) );
 
 		// Enqueue styles and scripts.
 		add_action( 'admin_enqueue_scripts', array( self::$instance->admin, 'revisr_scripts' ) );
@@ -347,9 +372,11 @@ class Revisr {
 
 	  	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 	   	dbDelta( $sql );
-	   	if ( get_option( 'revisr_db_version' ) === false ) {
+
+	   	if ( false === get_option( 'revisr_db_version' ) ) {
 	   		add_option( 'revisr_db_version', '1.1' );
 	   	}
+
 	}
 
 	/**
@@ -375,11 +402,8 @@ function revisr() {
 	return Revisr::get_instance();
 }
 
-// Runs the plugin.
-add_action( 'plugins_loaded', 'revisr' );
+// Let's go!
+revisr();
 
-// Registers the activation hook.
+// Register the activation hook.
 register_activation_hook( __FILE__, array( 'Revisr', 'revisr_install' ) );
-
-// Adds the settings link to the plugins page.
-add_filter( 'plugin_action_links_'  . plugin_basename( __FILE__ ), array( 'Revisr', 'settings_link' ) );
