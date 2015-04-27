@@ -1,11 +1,11 @@
 # Revisr #
-**Contributors:** ExpandedFronts  
-**Tags:** revisr, git, git management, revision tracking, revision, backup, database, database backup, database plugin, deploy, commit, bitbucket, github, version control  
-**Requires at least:** 3.9.2  
-**Tested up to:** 4.1.1  
-**Stable tag:** trunk  
-**License:** GPLv3  
-**License URI:** http://www.gnu.org/licenses/gpl.html  
+**Contributors:** ExpandedFronts
+**Tags:** revisr, git, git management, revision tracking, revision, backup, database, database backup, database plugin, deploy, commit, bitbucket, github, version control
+**Requires at least:** 3.9.2
+**Tested up to:** 4.2.1
+**Stable tag:** trunk
+**License:** GPLv3
+**License URI:** http://www.gnu.org/licenses/gpl.html
 
 A simple plugin for managing your WordPress website with Git.
 
