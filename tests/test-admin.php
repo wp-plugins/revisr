@@ -11,7 +11,7 @@ class RevisrAdminTest extends WP_UnitTestCase {
 	 * Set up the instance so we can run our tests.
 	 */
 	function setUp() {
-		$this->revisr 			= Revisr::get_instance();
+		$this->revisr 			= revisr();
 		$this->revisr->git 		= new Revisr_Git();
 		$this->revisr->db 		= new Revisr_DB();
 		$this->revisr->admin 	= new Revisr_Admin();
@@ -46,17 +46,4 @@ class RevisrAdminTest extends WP_UnitTestCase {
 		$this->assertEquals( false, $new_transient );
 	}
 
-	/**
-	 * Tests the Revisr_Admin::get_commit_details() method.
-	 */
-	function test_get_commit_details() {
-		$commit = Revisr_Admin::get_commit_details( 42 );
-		$this->assertArrayHasKey( 'branch', $commit );
-		$this->assertArrayHasKey( 'commit_hash', $commit );
-		$this->assertArrayHasKey( 'db_hash', $commit );
-		$this->assertArrayHasKey( 'db_backup_method', $commit );
-		$this->assertArrayHasKey( 'files_changed', $commit );
-		$this->assertArrayHasKey( 'committed_files', $commit );
-		$this->assertArrayHasKey( 'tag', $commit );
-	}
 }

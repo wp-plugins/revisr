@@ -19,7 +19,7 @@ class Revisr_DB_Backup_Test extends WP_UnitTestCase {
 	 * @access public
 	 */
 	public function setUp() {
-		$this->revisr 		= Revisr::get_instance();
+		$this->revisr 		= revisr();
 		$this->revisr->git 	= new Revisr_Git;
 		$this->revisr->db 	= new Revisr_DB;
 		$this->backup 		= new Revisr_DB_Backup;
@@ -37,7 +37,6 @@ class Revisr_DB_Backup_Test extends WP_UnitTestCase {
 		$this->assertEquals( true, $verify );
 
 	}
-
 
 	/**
 	 * Tests the Revisr_DB_Backup->backup_table_wpdb() method.

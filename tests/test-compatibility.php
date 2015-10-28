@@ -25,4 +25,5 @@ class RevisrCompatibilityTest extends WP_UnitTestCase {
 	function test_server_has_exec() {
 		$this->assertEquals( 'true', Revisr_Compatibility::server_has_exec() );
 	}
+
 }

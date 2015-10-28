@@ -1,8 +1,8 @@
 === Revisr ===
-Contributors: ExpandedFronts
+Contributors: ExpandedFronts, mattshaw
 Tags: revisr, git, git management, revision tracking, revision, backup, database, database backup, database plugin, deploy, commit, bitbucket, github, version control
 Requires at least: 3.9.2
-Tested up to: 4.1.1
+Tested up to: 4.3.1
 Stable tag: trunk
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
@@ -78,6 +78,46 @@ Care should be taken when dealing with upgrades that depend on the database. Tak
 
 
 == Changelog ==
+
+= 2.0 - October 27, 2015 =
+* New: Commits are no longer stored in the database
+* New: Setup wizard for when no repo is found
+* New: View commits before pushing/pulling them
+* New: View remote branches
+* New: Sort/paginate branches
+* New: Define installation path to Git from the settings page
+* New: Action hooks and filters for extending Revisr
+* New: Activity log can be filtered by age, event type, or username
+* Tweak: Improved commit speed when there are no unstaged files
+* Tweak: Include database backups in commit details
+* Tweak: Improved general plugin performance
+* Tweak: Improved file organization
+* Tweak: Improved detection of unpushed commits
+* Tweak: Improved information in the Help tab
+* Tweak: Always show confirmation dialog before reverts
+* Tweak: Removed unused bulk actions for commits
+* Tweak: Refactored CSS/JS files
+* Fix: PHP notice with saving the .gitignore
+* Fix: Minor logging error when committing with "Backup DB" and "Push Changes" checked at the same time
+* Fix: Committing a failed database backup
+* Fix: Changing salts during a DB import logs a user out with no notification/error in Revisr
+* Fix: Bug with the logged "Undo" URL for imports
+* Fix: Bug with default sort order in the dashboard
+* Fix: Conflict with BuddyPress
+
+= 1.9.5 =
+* Added sizes to database tables for the "Let me decide..." option
+* Added ability to search for commits by the 7-letter commit ID/hash
+* Added link/filter for viewing tags on dashboard/commits page
+* Improved plugin intiation
+* Fixed bug with certain errors saved as an array when making a commit
+* Fixed bug with first commit not showing correct branch
+* Fixed bug with ".gitignore" not showing latest version of gitignore when updated outside of Revisr
+
+= 1.9.4 =
+* Added support for sockets in the DB_HOST constant
+* Fixed bug causing error on PHP 5.2
+* Fixed bug causing potential error with backups/imports on some systems
 
 = 1.9.3 =
 * Added option to use WordPress instead of MySQL for backups and imports

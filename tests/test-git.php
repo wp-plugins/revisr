@@ -11,7 +11,7 @@ class RevisrGitTest extends WP_UnitTestCase {
 	 * Initialize the Git object.
 	 */
     function setUp() {
-		$this->revisr = Revisr::get_instance();
+		$this->revisr = revisr();
 		$this->revisr->git = new Revisr_Git();
 	}
 
@@ -28,6 +28,9 @@ class RevisrGitTest extends WP_UnitTestCase {
 	 * Tests the init function.
 	 */
 	function test_init_repo() {
+
+		define( 'REVISR_SETUP_INIT', true );
+
 		if ( ! $this->revisr->git->is_repo ) {
 			$this->revisr->git->init_repo();
 		}
@@ -66,7 +69,7 @@ class RevisrGitTest extends WP_UnitTestCase {
 	function test_git_dir() {
 		$dir = $this->revisr->git->get_git_dir();
 		$this->assertFileExists( $dir );
-		$this->assertFileExists( $dir . '/.git/config' );
+		$this->assertFileExists( $dir . '/config' );
 	}
 
 	/**
@@ -137,7 +140,7 @@ class RevisrGitTest extends WP_UnitTestCase {
 	 * Tests the count_untracked() function.
 	 */
 	function test_count_untracked() {
-		$dir 	= $this->revisr->git->get_git_dir();
+		$dir 	= $this->revisr->git->get_work_tree();
 		$time 	= time();
 		fopen( $dir . "/sample-file_$time.txt", "w" );
 		$new_untracked = $this->revisr->git->count_untracked();
@@ -176,6 +179,22 @@ class RevisrGitTest extends WP_UnitTestCase {
 	function test_current_remote() {
 		$remote = $this->revisr->git->current_remote();
 		$this->assertEquals( 'origin', $remote );
+	}
+
+	/**
+	 * Tests the Revisr_Git::get_commit_details() method.
+	 */
+	function test_get_commit_details() {
+		$commit = Revisr_Git::get_commit_details( 'abc1234' );
+		$this->assertArrayHasKey( 'hash', $commit );
+		$this->assertArrayHasKey( 'branch', $commit );
+		$this->assertArrayHasKey( 'author', $commit );
+		$this->assertArrayHasKey( 'subject', $commit );
+		$this->assertArrayHasKey( 'time', $commit );
+		$this->assertArrayHasKey( 'files_changed', $commit );
+		$this->assertArrayHasKey( 'committed_files', $commit );
+		$this->assertArrayHasKey( 'tag', $commit );
+		$this->assertArrayHasKey( 'status', $commit );
 	}
 
 	/**

@@ -11,7 +11,7 @@ class RevisrTest extends WP_UnitTestCase {
 	 * Initializes the plugin.
 	 */
 	function setUp() {
-		$this->revisr = Revisr::get_instance();
+		$this->revisr = revisr();
 	}
 
 	/**
@@ -43,18 +43,24 @@ class RevisrTest extends WP_UnitTestCase {
 	 * Tests the load_dependencies() method.
 	 */
 	function test_load_dependencies() {
-		$this->assertFileExists( REVISR_PATH . 'includes/class-revisr-i18n.php' );
-		$this->assertFileExists( REVISR_PATH . 'includes/class-revisr-git.php' );
-		$this->assertFileExists( REVISR_PATH . 'includes/class-revisr-admin.php' );
-		$this->assertFileExists( REVISR_PATH . 'includes/class-revisr-remote.php' );
-		$this->assertFileExists( REVISR_PATH . 'includes/class-revisr-db.php' );
-		$this->assertFileExists( REVISR_PATH . 'includes/class-revisr-git-callback.php' );
-		$this->assertFileExists( REVISR_PATH . 'includes/class-revisr-cron.php' );
-		$this->assertFileExists( REVISR_PATH . 'includes/class-revisr-process.php' );
-		$this->assertFileExists( REVISR_PATH . 'includes/class-revisr-list-table.php' );
-		$this->assertFileExists( REVISR_PATH . 'includes/class-revisr-commits.php' );
-		$this->assertFileExists( REVISR_PATH . 'includes/class-revisr-settings.php' );
-		$this->assertFileExists( REVISR_PATH . 'includes/class-revisr-settings-fields.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-activity-table.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-admin.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-admin-pages.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-branch-table.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-commits-table.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-meta-boxes.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-compatibility.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-cron.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-db-backup.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-db-import.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-db.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-git-callback.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-git.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-i18n.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-process.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-remote.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-settings-fields.php' );
+		$this->assertFileExists( REVISR_PATH . 'classes/class-revisr-settings.php' );
 	}
 
 	/**
@@ -79,18 +85,10 @@ class RevisrTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Tests the settings_link() method.
-	 */
-	function test_settings_link() {
-		$settings_links = serialize( Revisr::settings_link( $links = array() ) );
-		$this->assertContains( 'revisr', $settings_links );
-	}
-
-	/**
 	 * Tests the database installation.
 	 */
-	function test_revisr_install() {
-		$this->revisr->revisr_install();
+	function test_install() {
+		Revisr::install();
 		global $wpdb;
 		$table_name 	= $wpdb->prefix . 'revisr';
 		$table_check 	= $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
